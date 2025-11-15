@@ -18,3 +18,14 @@ This document outlines the core functional and non-functional requirements for t
 | R8 | Fuctional | Flanking regions | ... | Given the output from R7, this rule shall add flanking regions to the input sequences | Custom script |
 | R9 | Functional | ... | Build a phylogenetic tree | Given the ORF iwth CD (RT for example), this rule shall build a phylogenetic tree | [IQ-Tree](https://iqtree.github.io/) |
 ---
+
+## More detailed description
+
+**R1 de novo TE search and classification**:
+  - tool: RepeatModeller2
+  - input: genome assembly, .fasta.gz
+  - output: consesnus sequences, .fasta
+  - tasks:
+    - [ ] make & test conda env
+    - [ ] rule
+    - [ ] test
