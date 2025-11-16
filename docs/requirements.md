@@ -8,7 +8,8 @@ This document outlines the core functional and non-functional requirements for t
 
 | ID | Type | Description | Status | Acceptance criteria | Tool |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-|R1 | Functional | de novo TE search and classification | ... | Given a set of genomic sequences, this pipeline rule shall identify and classify mobile genetic elements (MGEs) present in the sequences. | [RepeatModeler2](https://github.com/Dfam-consortium/RepeatModeler) |
+| R1.1 | Functional | BuildDabase | ... | run BuildDatabase script to build a database from the input genome | RepeatModeler |
+|R1.2 | Functional | de novo TE search and classification | ... | Given a set of genomic sequences, this pipeline rule shall identify and classify mobile genetic elements (MGEs) present in the sequences. | [RepeatModeler2](https://github.com/Dfam-consortium/RepeatModeler) |
 |R2 | Funcitonal | Collect TE seqs of interest from R1 output | ... | Given the output from R1 (a fasta file), this rule shall exatract those consenus sequences specified by user. | Custom script |
 |R3 | Functional | Annotate TE seqs from R2 output | ... | Given the output from R2 (a fasta file), this rule shall annotate those consenus sequences specified by user. | [RepeatMasker](http://www.repeatmasker.org/) |
 |R4 | Functional | Cut out TE regions from genome | ... | Given the output from R3 (a GFF or TSV file), this rule shall extract those TE regions specified by user from the genome. | [BEDTools](https://bedtools.readthedocs.io/en/latest/) |
