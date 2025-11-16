@@ -1,0 +1,25 @@
+from snakemake.io import expand, directory, touch
+
+
+rule all:
+    input:
+        expand("results/final/{sample}.done", sample=config["samples"]),
+
+
+rule build_database:
+    input:
+        genome="data/{sample}.fasta.gz",
+    output:
+        db_name="results/{sample}_db",
+    log:
+        "logs/{sample}_build_database.log",
+    shell:
+        "BuildDatabase -name {output.db_name} {input.genome} &> {log}"
+
+rule final:
+    input:
+        db_name="results/{sample}_db",
+    output:
+        touch("results/final/{sample}.done"),
+    shell:
+        "echo 'Done'"
