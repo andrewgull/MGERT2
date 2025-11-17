@@ -30,7 +30,7 @@ jobs:
           mamba-version: '*'
           auto-activate-base: false
           # snakefmt is reliably on conda-forge
-          channels: conda-forge
+          channels: bioconda,conda-forge
           
       # Step 2.3: Install snakefmt
       - name: Install snakefmt
