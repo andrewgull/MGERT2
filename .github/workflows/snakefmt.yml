@@ -1,0 +1,51 @@
+name: Snakefile Formatting Check
+
+# 1. Define when this workflow should run
+# Typically, you want this on every push and pull request.
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+# 2. Define the job
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 2.1: Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2.2: Setup Mambaforge with necessary channels
+      - name: Setup Mambaforge for Linter
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: 'latest'
+          mamba-version: '*'
+          auto-activate-base: false
+          # snakefmt is reliably on conda-forge
+          channels: conda-forge
+          
+      # Step 2.3: Install snakefmt
+      - name: Install snakefmt
+        shell: bash
+        # Using a fresh, lightweight environment is efficient for linters
+        run: |
+          mamba create -n snakefmt_env -y snakefmt
+          conda activate snakefmt_env
+
+      # Step 2.4: Run snakefmt check
+      - name: Run snakefmt Check on Snakefile
+        shell: bash
+        # We need to activate the environment where snakefmt lives
+        run: |
+          # Source the initialization script and activate the environment
+          source ${CONDA}/etc/profile.d/conda.sh
+          conda activate snakefmt_env
+          snakefmt --check --verbose -l 130 ../../workflow/Snakefile
