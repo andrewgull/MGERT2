@@ -49,4 +49,6 @@ jobs:
         # Your exact command is used here
         run: |
           # Use the activated environment for snakemake
+          source ${CONDA}/etc/profile.d/conda.sh
+          conda activate base
           snakemake -n -s ../../workflow/Snakefile --configfiles ../../config/config.yaml
