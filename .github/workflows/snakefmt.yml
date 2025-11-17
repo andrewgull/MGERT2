@@ -1,7 +1,6 @@
 name: Snakefile Formatting Check
 
 # 1. Define when this workflow should run
-# Typically, you want this on every push and pull request.
 on:
   push:
     branches:
@@ -41,7 +40,6 @@ jobs:
       - name: Run snakefmt Check on Snakefile
         working-directory: .tests/integration
         shell: bash
-        # We need to activate the environment where snakefmt lives
         run: |
           # Source the initialization script and activate the environment
           source ${CONDA}/etc/profile.d/conda.sh
