@@ -39,6 +39,7 @@ jobs:
 
       # Step 2.4: Run snakefmt check
       - name: Run snakefmt Check on Snakefile
+        working-directory: .tests/integration
         shell: bash
         # We need to activate the environment where snakefmt lives
         run: |
