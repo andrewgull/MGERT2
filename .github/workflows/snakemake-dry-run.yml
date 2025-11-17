@@ -1,0 +1,51 @@
+name: Snakemake Dry Run Check
+
+# 1. Define when this workflow should run
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+# 2. Define the jobs (what to do)
+jobs:
+  dry_run:
+    # Use a standard Ubuntu runner environment
+    runs-on: ubuntu-latest
+    
+    # 3. Define the steps for the job
+    steps:
+      # Step 3.1: Checkout the repository code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 3.2: Set up Conda/Mamba to install Snakemake and dependencies
+      # We'll use micromamba for speed and reliability, which is commonly used with Snakemake.
+      - name: Setup Mambaforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: 'latest'
+          # Use mamba as the package manager
+          mamba-version: '*'
+          # Conda environment will be activated automatically
+          auto-activate-base: false 
+          
+      # Step 3.3: Install Snakemake and any required tools
+      # You can adjust this to include other tools needed for the dry run.
+      - name: Install Snakemake
+        shell: bash
+        run: mamba install -y snakemake python=3.10
+
+      # Step 3.4: Run the Snakemake dry run command
+      - name: Run Snakemake Dry Run
+        # The working directory is specified using the 'working-directory' keyword
+        working-directory: .tests/integration
+        shell: bash
+        # Your exact command is used here
+        run: |
+          # Use the activated environment for snakemake
+          snakemake -n -s ../../workflow/Snakefile --configfiles ../../config/config.yaml
