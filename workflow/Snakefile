@@ -21,7 +21,7 @@ rule build_database:
     log:
         "logs/{sample}_build_database.log",
     conda:
-        "envs/rmod_database.yaml",
+        "envs/rmod_database.yaml"
     shell:
         """filename={output.nhr}; basename="${{filename%.nhr}}" & BuildDatabase -name ${{basename}} {input.genome} > &> {log}"""
 
