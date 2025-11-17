@@ -9,6 +9,9 @@ __pycache__/
 # snakemake files
 .snakemake/
 
+# IDE files?
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/
