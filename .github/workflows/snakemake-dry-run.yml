@@ -33,13 +33,13 @@ jobs:
           mamba-version: '*'
           # Conda environment will be activated automatically
           auto-activate-base: false 
-          channels: conda-forge,defaults
+          channels: bioconda,conda-forge,defaults
           
       # Step 3.3: Install Snakemake and any required tools
       # You can adjust this to include other tools needed for the dry run.
       - name: Install Snakemake
         shell: bash
-        run: mamba install -y snakemake python=3.10
+        run: mamba install -y snakemake python=3.12
 
       # Step 3.4: Run the Snakemake dry run command
       - name: Run Snakemake Dry Run
