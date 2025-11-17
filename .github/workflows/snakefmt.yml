@@ -29,16 +29,13 @@ jobs:
           miniconda-version: 'latest'
           mamba-version: '*'
           auto-activate-base: false
-          # snakefmt is reliably on conda-forge
           channels: bioconda,conda-forge
           
       # Step 2.3: Install snakefmt
       - name: Install snakefmt
         shell: bash
-        # Using a fresh, lightweight environment is efficient for linters
         run: |
-          mamba create -n snakefmt_env -y snakefmt
-          conda activate snakefmt_env
+          mamba install -y snakefmt
 
       # Step 2.4: Run snakefmt check
       - name: Run snakefmt Check on Snakefile
@@ -47,5 +44,5 @@ jobs:
         run: |
           # Source the initialization script and activate the environment
           source ${CONDA}/etc/profile.d/conda.sh
-          conda activate snakefmt_env
+          conda activate base
           snakefmt --check --verbose -l 130 ../../workflow/Snakefile
