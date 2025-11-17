@@ -33,6 +33,7 @@ jobs:
           mamba-version: '*'
           # Conda environment will be activated automatically
           auto-activate-base: false 
+          channels: conda-forge,defaults
           
       # Step 3.3: Install Snakemake and any required tools
       # You can adjust this to include other tools needed for the dry run.
