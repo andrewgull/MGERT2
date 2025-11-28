@@ -10,7 +10,7 @@ This document outlines the core functional and non-functional requirements for t
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | R1.1 | Functional | BuildDabase | ... | run BuildDatabase script to build a database from the input genome | RepeatModeler |
 |R1.2 | Functional | de novo TE search and classification | ... | Given a set of genomic sequences, this pipeline rule shall identify and classify mobile genetic elements (MGEs) present in the sequences. | [RepeatModeler2](https://github.com/Dfam-consortium/RepeatModeler) |
-|R2 | Funcitonal | Collect TE seqs of interest from R1 output | ... | Given the output from R1 (a fasta file), this rule shall exatract those consenus sequences specified by user. | Custom script |
+|R2 | Functional | Collect TE seqs of interest from R1 output | ... | Given the output from R1 (a fasta file), this rule shall exatract those consenus sequences specified by user. | Custom script |
 |R3 | Functional | Annotate TE seqs from R2 output | ... | Given the output from R2 (a fasta file), this rule shall annotate those consenus sequences specified by user. | [RepeatMasker](http://www.repeatmasker.org/) |
 |R4 | Functional | Cut out TE regions from genome | ... | Given the output from R3 (a GFF or TSV file), this rule shall extract those TE regions specified by user from the genome. | [BEDTools](https://bedtools.readthedocs.io/en/latest/) |
 |R5 | Functional | ORF search | ... | Given the output from R4 (a fasta file), this rule hall identify open reading frames within the sequences. | [ORFfinder](https://www.ncbi.nlm.nih.gov/orffinder/) |
@@ -26,6 +26,33 @@ This document outlines the core functional and non-functional requirements for t
   - tool: RepeatModeller2
   - input: genome assembly, .fasta.gz
   - output: consesnus sequences, .fasta
+  - tasks:
+    - [ ] make & test conda env
+    - [ ] rule
+    - [ ] test
+
+**R2 Collect TE seqs of interest from R1 output**:
+  - tool: Custom script
+  - input: R1 output (consensus sequences, .fasta) and user-specified list of TE names/families
+  - output: Filtered consensus sequences, .fasta
+  - tasks:
+    - [ ] create script
+    - [ ] rule
+    - [ ] test
+
+**R3 Annotate TE seqs from R2 output**:
+  - tool: RepeatMasker
+  - input: genome assembly (.fasta.gz), R2 output (consensus sequences, .fasta)
+  - output: annotation file (.gff or .out)
+  - tasks:
+    - [ ] make & test conda env
+    - [ ] rule
+    - [ ] test
+
+**R4 Cut out TE regions from genome**:
+  - tool: BEDTools
+  - input: genome assembly (.fasta.gz), R3 output (annotation file)
+  - output: TE sequences (.fasta)
   - tasks:
     - [ ] make & test conda env
     - [ ] rule
