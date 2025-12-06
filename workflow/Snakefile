@@ -1,5 +1,6 @@
 from snakemake.io import expand, directory, touch
 
+
 rule all:
     input:
         expand("results/final/{sample}.done", sample=config["samples"]),
@@ -36,11 +37,14 @@ rule run_repeatmodeler2:
         nhr="results/rmod_database/{sample}/{sample}_rmod.nhr",
     output:
         families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
-    log: "logs/{sample}_run_repeatmodeler2.log"
+    log:
+        "logs/{sample}_run_repeatmodeler2.log",
     threads: 8
-    conda: "envs/rmod_database.yaml"
-    shell: """filename={input.nhr}; basename="${{filename%.nhr}}" && RepeatModeler -threads {threads} -database ${{basename}} &> {log}"""
-        
+    conda:
+        "envs/rmod_database.yaml"
+    shell:
+        """filename={input.nhr}; basename="${{filename%.nhr}}" && RepeatModeler -threads {threads} -database ${{basename}} &> {log}"""
+
 
 rule final:
     input:
