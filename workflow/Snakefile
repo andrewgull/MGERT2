@@ -1,12 +1,14 @@
 from snakemake.io import expand, directory, touch
 
-
 rule all:
     input:
         expand("results/final/{sample}.done", sample=config["samples"]),
 
 
 rule build_database:
+    """
+    Build a database from the input genome assembly
+    """
     input:
         genome="data/{sample}.fasta.gz",
     output:
@@ -23,12 +25,26 @@ rule build_database:
     conda:
         "envs/rmod_database.yaml"
     shell:
-        """filename={output.nhr}; basename="${{filename%.nhr}}" & BuildDatabase -name ${{basename}} {input.genome} > &> {log}"""
+        """filename={output.nhr}; basename="${{filename%.nhr}}" & BuildDatabase -name ${{basename}} {input.genome} &> {log}"""
 
+
+rule run_repeatmodeler2:
+    """
+    Run RepeatModeler2 using the database files from the previous rule
+    """
+    input:
+        nhr="results/rmod_database/{sample}/{sample}_rmod.nhr",
+    output:
+        families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
+    log: "logs/{sample}_run_repeatmodeler2.log"
+    threads: 8
+    conda: "envs/rmod_database.yaml"
+    shell: """filename={input.nhr}; basename="${{filename%.nhr}}" && RepeatModeler -threads {threads} -database ${{basename}} &> {log}"""
+        
 
 rule final:
     input:
-        db_name="results/rmod_database/{sample}/{sample}_rmod.nhr",
+        families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
     output:
         touch("results/final/{sample}.done"),
     shell:
