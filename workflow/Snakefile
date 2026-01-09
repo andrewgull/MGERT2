@@ -58,6 +58,7 @@ rule collect_te:
     script:
         "scripts/collect_te.py"
 
+
 rule final:
     input:
         families="results/collect_te/{sample}/{sample}_family.fa",
