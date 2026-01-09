@@ -46,9 +46,21 @@ rule run_repeatmodeler2:
         """filename={input.nhr}; basename="${{filename%.nhr}}" && RepeatModeler -threads {threads} -database ${{basename}} &> {log}"""
 
 
-rule final:
+rule collect_te:
     input:
         families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
+    output:
+        collection="results/collect_te/{sample}/{sample}_family.fa",
+    params:
+        te_name=config.get("te_name", ""),
+    conda:
+        "envs/biopython.yaml"
+    script:
+        "scripts/collect_te.py"
+
+rule final:
+    input:
+        families="results/collect_te/{sample}/{sample}_family.fa",
     output:
         touch("results/final/{sample}.done"),
     shell:
