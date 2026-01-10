@@ -42,8 +42,10 @@ rule run_repeatmodeler2:
     threads: 8
     conda:
         "envs/rmod_database.yaml"
-    shell:
-        """filename={input.nhr}; basename="${{filename%.nhr}}" && RepeatModeler -threads {threads} -database ${{basename}} &> {log}"""
+    params:
+        db_basename=lambda wildcards, input: input.nhr.replace(".nhr", ""),
+    script:
+        "scripts/run_repeatmodeler.py"
 
 
 rule collect_te:
