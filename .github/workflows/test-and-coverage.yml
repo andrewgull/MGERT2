@@ -1,0 +1,53 @@
+name: Python Code Quality
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths: ['**.py']
+
+# Essential for the action to have permission to write a comment
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  test-and-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-cov
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Get added files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: '**.py'
+          separator: ' '
+
+      - name: Run tests and capture output
+        if: steps.changed-files.outputs.added_files != ''
+        run: |
+          # We use 'tee' to see the output in logs AND save it to a file
+          pytest --cov=. --cov-report=term-missing ${{ steps.changed-files.outputs.added_files }} | tee pytest-coverage.txt
+
+      - name: Pytest coverage comment
+        if: steps.changed-files.outputs.added_files != ''
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          title: "🧬 Bioinformatics Script Coverage Report"
+          badge-title: "Coverage"
+          hide-badge: false
+          create-new-comment: false # Updates the existing comment if you push new commits
