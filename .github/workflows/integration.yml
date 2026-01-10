@@ -1,4 +1,4 @@
-name: CI
+name: Small integration test
 
 on:
   push:
@@ -20,5 +20,5 @@ jobs:
           args: >-
             --use-conda
             --cores 1
-            --configfile config/config.yaml
+            --configfiles ../../config/config.yaml config/config.yaml
             --show-failed-logs
