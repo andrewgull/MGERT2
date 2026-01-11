@@ -1,4 +1,6 @@
 # MGERT2
+[![Python Code Quality](https://github.com/andrewgull/MGERT2/actions/workflows/test-and-coverage.yml/badge.svg?branch=dev)](https://github.com/andrewgull/MGERT2/actions/workflows/test-and-coverage.yml)
+
 re-work of [MGERT](https://github.com/andrewgull/MGERT) - aka a big-ass 6 year old python script
 
 Before starting to work, check the Issues tab and Project requirements [docs/requirements.md](https://github.com/andrewgull/MGERT2/blob/dev/docs/requirements.md)
