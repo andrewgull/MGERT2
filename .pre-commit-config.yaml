@@ -19,6 +19,7 @@ repos:
         name: pytest-check
         entry: pytest
         language: system
-        pass_filenames: true
+        pass_filenames: false
+        always_run: true
         types: [python]
         args: ["--cov=.", "--cov-fail-under=80"]
