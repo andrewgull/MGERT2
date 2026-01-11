@@ -1,0 +1,53 @@
+name: Python Code Quality
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths: ['**.py']
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  test-and-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-cov biopython
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: '**.py'
+          separator: ' '
+
+      - name: Run tests and capture output
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          # Use --color=no to ensure the output file is plain text for the parser
+          # Run tests from .tests/units to ensure a valid coverage report is generated
+          pytest --cov=. --cov-report=term-missing --color=no .tests/units | tee pytest-coverage.txt
+
+      - name: Pytest coverage comment
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          title: "🧬 Bioinformatics Script Coverage Report"
+          badge-title: "Coverage"
+          hide-badge: false
+          create-new-comment: false

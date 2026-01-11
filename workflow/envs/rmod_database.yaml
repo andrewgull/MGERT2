@@ -1,4 +1,6 @@
 channels:
   - bioconda
+  - conda-forge
 dependencies:
+  - python=3.11
   - repeatmodeler=2.0.7
