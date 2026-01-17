@@ -1,5 +1,6 @@
 from Bio import SeqIO
 
+
 def collect_te(fasta_file, te_name):
     """
     Collects sequences from a FASTA file that start with a specific TE name.
@@ -29,7 +30,5 @@ def main(input_fasta, output_fasta, te_name):
 
 if __name__ == "__main__":
     main(
-        snakemake.input.families,
-        snakemake.output.collection,
-        snakemake.params.te_name
+        snakemake.input.families, snakemake.output.collection, snakemake.params.te_name
     )
