@@ -22,4 +22,4 @@ repos:
         pass_filenames: false
         always_run: true
         types: [python]
-        args: ["--cov=.", "--cov-fail-under=80"]
+        args: ["--cov=.", "--cov-fail-under=90"]
