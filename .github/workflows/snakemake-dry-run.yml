@@ -16,7 +16,7 @@ jobs:
   dry_run:
     # Use a standard Ubuntu runner environment
     runs-on: ubuntu-latest
-    
+
     # 3. Define the steps for the job
     steps:
       # Step 3.1: Checkout the repository code
@@ -31,17 +31,19 @@ jobs:
           # Use mamba as the package manager
           mamba-version: '*'
           # Conda environment will be activated automatically
-          auto-activate-base: false 
+          auto-activate-base: false
           channels: bioconda,conda-forge,defaults
-          
+
       # Step 3.3: Install Snakemake and any required tools
       - name: Install Snakemake
         shell: bash
-        run: mamba install -y snakemake python=3.12
+        run: |
+          if [ -f requirements.test.txt ]; then pip install -r requirements.test.txt; fi
+          mamba install -y snakemake python=3.12
 
       # Step 3.4: Run the Snakemake dry run command
       - name: Run Snakemake Dry Run
-        working-directory: .tests/integration
+        working-directory: tests/integration
         shell: bash
         run: |
           # Use the activated environment for snakemake

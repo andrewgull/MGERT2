@@ -14,3 +14,12 @@ Check the Issues tab and Project requirements [docs/requirements.md](https://git
 Remember that `dev` and `main` branches are protected - do not push changes to them. Create a new branch to contribute to the project.
 
 Follow [this guide](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716) to write better commit messages.
+
+
+Snakemake dry run:
+
+```bash
+snakemake --use-conda --cores 8 --configfile config/config.yaml --n
+```
+
+For **real** run remove `--n`

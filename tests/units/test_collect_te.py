@@ -11,6 +11,7 @@ if project_root not in sys.path:
 
 from workflow.scripts.collect_te import collect_te, main
 
+
 @pytest.fixture
 def mock_fasta_content():
     return (
@@ -24,9 +25,11 @@ def mock_fasta_content():
         "TTTT\n"
     )
 
+
 @pytest.fixture
 def mock_fasta_file(mock_fasta_content):
     return StringIO(mock_fasta_content)
+
 
 def test_collect_te_found(mock_fasta_file):
     results = collect_te(mock_fasta_file, "TE1")
@@ -35,9 +38,11 @@ def test_collect_te_found(mock_fasta_file):
     assert results[1].id == "TE1_sequence2"
     assert str(results[0].seq) == "ATGC"
 
+
 def test_collect_te_not_found(mock_fasta_file):
     results = collect_te(mock_fasta_file, "TE3")
     assert len(results) == 0
+
 
 def test_collect_te_partial_match(mock_fasta_file):
     results = collect_te(mock_fasta_file, "TE")
@@ -47,21 +52,23 @@ def test_collect_te_partial_match(mock_fasta_file):
     assert "TE1_sequence2" in ids
     assert "TE2_sequence1" in ids
 
+
 def test_collect_te_empty_fasta():
     empty_fasta = StringIO("")
     results = collect_te(empty_fasta, "TE1")
     assert len(results) == 0
 
+
 def test_main_logic(tmp_path, mock_fasta_content):
     # Setup temporary files
     input_file = tmp_path / "input.fasta"
     output_file = tmp_path / "output.fasta"
-    
+
     input_file.write_text(mock_fasta_content)
-    
+
     # Run main logic
     main(str(input_file), str(output_file), "TE1")
-    
+
     # Verify output
     assert output_file.exists()
     records = list(SeqIO.parse(str(output_file), "fasta"))

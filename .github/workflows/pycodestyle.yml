@@ -5,11 +5,11 @@ on:
    # Triggers the workflow on push or pull request events but only for the master and develop branch
   push:
     branches:
-     - develop
+     - dev
      - main
   pull_request:
     branches:
-     - develop
+     - dev
      - main
 
   # Allows you to run this workflow manually from the Actions tab
@@ -29,6 +29,6 @@ jobs:
       - name: Install dependecnies
         run: |
           python -m pip install --upgrade pip
-          pip install pycodestyle
+          if [ -f requirements.test.txt ]; then pip install -r requirements.test.txt; else pip install pycodestyle; fi
       - name: Check python style
         run: pycodestyle --max-line-length=130 --statistics workflow/scripts
