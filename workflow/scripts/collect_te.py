@@ -15,7 +15,7 @@ def collect_te(fasta_file, te_name):
     records = SeqIO.parse(fasta_file, "fasta")
     collection = []
     for record in records:
-        if record.id.startswith(te_name):
+        if te_name in record.id:
             collection.append(record)
     return collection
 
