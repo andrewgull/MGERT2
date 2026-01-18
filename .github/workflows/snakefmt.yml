@@ -15,33 +15,26 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    
+
     steps:
       # Step 2.1: Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2.2: Setup Mambaforge with necessary channels
-      - name: Setup Mambaforge for Linter
-        uses: conda-incubator/setup-miniconda@v3
+      # Step 2.2: Setup Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          miniconda-version: 'latest'
-          mamba-version: '*'
-          auto-activate-base: false
-          channels: bioconda,conda-forge
-          
-      # Step 2.3: Install snakefmt
-      - name: Install snakefmt
-        shell: bash
+          python-version: '3.12'
+
+      # Step 2.3: Install snakefmt and requirements
+      - name: Install dependencies
         run: |
-          mamba install -y snakefmt
+          python -m pip install --upgrade pip
+          if [ -f requirements.test.txt ]; then pip install -r requirements.test.txt; else pip install snakefmt; fi
 
       # Step 2.4: Run snakefmt check
       - name: Run snakefmt Check on Snakefile
-        working-directory: .tests/integration
-        shell: bash
+        working-directory: tests/integration
         run: |
-          # Source the initialization script and activate the environment
-          source ${CONDA}/etc/profile.d/conda.sh
-          conda activate base
           snakefmt --check --verbose -l 130 ../../workflow/Snakefile

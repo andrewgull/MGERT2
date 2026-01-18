@@ -9,7 +9,7 @@ on:
 
 permissions:
   pull-requests: write
-  contents: read
+  contents: write
 
 jobs:
   test-and-report:
@@ -27,8 +27,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pytest pytest-cov biopython
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          python -m pip install --upgrade pip
+          if [ -f requirements.test.txt ]; then pip install -r requirements.test.txt; fi
 
       - name: Get changed files
         id: changed-files
@@ -40,9 +40,7 @@ jobs:
       - name: Run tests and capture output
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
-          # Use --color=no to ensure the output file is plain text for the parser
-          # Run tests from .tests/units to ensure a valid coverage report is generated
-          pytest --cov=. --cov-report=term-missing --color=no .tests/units | tee pytest-coverage.txt
+          pytest --cov=. --cov-report=term-missing --color=no tests/units | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
         if: steps.changed-files.outputs.any_changed == 'true'
