@@ -1,0 +1,28 @@
+[workspace]
+name = "MGERT2"
+description = "MGERT2 pipeline"
+version = "0.0.0"
+channels = ["conda-forge", "bioconda"]
+platforms = ["osx-arm64", "linux-64"]
+
+[tasks]
+dry-run = "snakemake -n --cores 1 --use-conda --configfile config/config.yaml"
+format = "snakefmt workflow/Snakefile"
+lint = "snakemake --lint"
+unlock = "snakemake --unlock"
+rulegraph = { cmd = "dot -c && snakemake --rulegraph --configfile config/config.yaml | dot -Tsvg > images/rulegraph.svg" }
+dag = { cmd = "dot -c && snakemake --dag --configfile config/config.yaml | dot -Tsvg > images/dag.svg" }
+tests = "pytest tests/"
+
+[dependencies]
+snakemake = "9.13.5.*"
+snakefmt = ">=0.11.2,<0.12"
+pytest = ">=9.0.2,<10"
+pycodestyle = ">=2.14.0,<3"
+pytest-cov = ">=7.0.0,<8"
+biopython = ">=1.86,<2"
+python = ">=3.13.11,<3.14"
+micromamba = ">=2.5.0,<3"
+python-graphviz = ">=0.21,<0.22"
+cairo = ">=1.18.4,<2"
+pango = ">=1.56.4,<2"
