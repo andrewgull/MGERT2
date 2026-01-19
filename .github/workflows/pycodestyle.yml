@@ -26,9 +26,9 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependecnies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.test.txt ]; then pip install -r requirements.test.txt; else pip install pycodestyle; fi
+          pip install pycodestyle==2.14.0
       - name: Check python style
         run: pycodestyle --max-line-length=130 --statistics workflow/scripts
