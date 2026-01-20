@@ -11,7 +11,7 @@
 
 This is a rework of [MGERT](https://github.com/andrewgull/MGERT) - a.k.a. a big-ass 6 year old python script which was slain by "dependency hell".
 
-Check the Issues tab and [Project requirements](https://github.com/andrewgull/MGERT2/blob/dev/docs/requirements.md) to get started.
+Check the Issues tab and [Project requirements](docs/requirements.md) to get started.
 
 Remember that `dev` and `main` branches are protected - do not push changes to them. Create a new branch to contribute to the project.
 
