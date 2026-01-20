@@ -32,5 +32,5 @@ jobs:
             -n
             --use-conda
             --cores 1
-            --configfiles ../../config/config.yaml config/config.yaml
+            --configfiles config/config.yaml tests/integration/config/config.yaml
             --show-failed-logs
