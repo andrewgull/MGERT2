@@ -23,30 +23,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 3.2: Set up Conda/Mamba to install Snakemake and dependencies
-      - name: Setup Mambaforge
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Run Snakemake dry run
+        uses: snakemake/snakemake-github-action@v1
         with:
-          miniconda-version: 'latest'
-          # Use mamba as the package manager
-          mamba-version: '*'
-          # Conda environment will be activated automatically
-          auto-activate-base: false
-          channels: bioconda,conda-forge,defaults
-
-      # Step 3.3: Install Snakemake and any required tools
-      - name: Install Snakemake
-        shell: bash
-        run: |
-          if [ -f requirements.test.txt ]; then pip install -r requirements.test.txt; fi
-          mamba install -y snakemake python=3.12
-
-      # Step 3.4: Run the Snakemake dry run command
-      - name: Run Snakemake Dry Run
-        working-directory: tests/integration
-        shell: bash
-        run: |
-          # Use the activated environment for snakemake
-          source ${CONDA}/etc/profile.d/conda.sh
-          conda activate base
-          snakemake -n -s ../../workflow/Snakefile --configfiles ../../config/config.yaml config/config.yaml
+          directory: tests/integration
+          snakefile: workflow/Snakefile
+          args: >-
+            -n
+            --use-conda
+            --cores 1
+            --configfiles config/config.yaml tests/integration/config/config.yaml
+            --show-failed-logs

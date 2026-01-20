@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.test.txt ]; then pip install -r requirements.test.txt; else pip install pytest biopython; fi
+          pip install pytest==8.4.2 biopython==1.86
 
       - name: Run unit tests
         run: |
