@@ -7,8 +7,10 @@ platforms = ["osx-arm64", "linux-64"]
 
 [tasks]
 dry-run = "snakemake -n --cores 1 --use-conda --configfile config/config.yaml"
-format = "snakefmt workflow/Snakefile"
-lint = "snakemake --lint"
+full-run = "snakemake --cores 4 --use-conda --configfile config/config.yaml"
+format-snakefile = "snakefmt -l 130 workflow/Snakefile"
+lint = "snakemake --lint --configfile config/config.yaml"
+format-scripts = "snakefmt -l 130 workflow/scripts/*.py"
 unlock = "snakemake --unlock"
 rulegraph = { cmd = "dot -c && snakemake --rulegraph --configfile config/config.yaml | dot -Tsvg > images/rulegraph.svg" }
 dag = { cmd = "dot -c && snakemake --dag --configfile config/config.yaml | dot -Tsvg > images/dag.svg" }
