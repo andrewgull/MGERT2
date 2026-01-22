@@ -20,6 +20,5 @@ repos:
         entry: pytest
         language: system
         pass_filenames: false
-        always_run: true
-        types: [python]
+        files: \.(py|R)$
         args: ["--cov=.", "--cov-fail-under=90"]
