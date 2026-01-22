@@ -15,6 +15,7 @@ unlock = "snakemake --unlock"
 rulegraph = { cmd = "dot -c && snakemake --rulegraph --configfile config/config.yaml | dot -Tsvg > images/rulegraph.svg" }
 dag = { cmd = "dot -c && snakemake --dag --configfile config/config.yaml | dot -Tsvg > images/dag.svg" }
 tests = "pytest tests/"
+pre-commit = "pre-commit run pytest-check --files workflow/scripts/*.py"
 
 [dependencies]
 snakemake = "9.13.5.*"
@@ -29,3 +30,4 @@ python-graphviz = ">=0.21,<0.22"
 cairo = ">=1.18.4,<2"
 pango = ">=1.56.4,<2"
 conda = ">=25.11.1,<26"
+pre-commit = ">=4.5.1,<5"
