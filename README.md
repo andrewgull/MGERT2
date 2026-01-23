@@ -27,7 +27,7 @@ to write better commit messages.
 To ensure we all use exactly the same dependencies to run the workflow,
 tests etc., we use [Pixi](https://pixi.sh/).
 
-Intall it on your laptop using this [guide](https://pixi.prefix.dev/latest/installation/).
+Install it on your laptop using this [guide](https://pixi.prefix.dev/latest/installation/).
 
 ## How to run
 
