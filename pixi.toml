@@ -16,6 +16,7 @@ rulegraph = { cmd = "dot -c && snakemake --rulegraph --configfile config/config.
 dag = { cmd = "dot -c && snakemake --dag --configfile config/config.yaml | dot -Tsvg > images/dag.svg" }
 tests = "pytest tests/"
 pre-commit = "pre-commit run pytest-check --files workflow/scripts/*.py"
+md-lint = "markdownlint-cli2 README.md --fix"
 
 [dependencies]
 snakemake = "9.13.5.*"
