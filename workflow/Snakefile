@@ -1,4 +1,4 @@
-from snakemake.io import expand, directory, touch
+from snakemake.io import expand, directory, touch, multiext
 
 
 rule all:
@@ -13,20 +13,14 @@ rule build_database:
     input:
         genome="data/{sample}.fasta.gz",
     output:
-        nhr="results/rmod_database/{sample}/{sample}_rmod.nhr",
-        nin="results/rmod_database/{sample}/{sample}_rmod.nin",
-        njs="results/rmod_database/{sample}/{sample}_rmod.njs",
-        nnd="results/rmod_database/{sample}/{sample}_rmod.nnd",
-        nni="results/rmod_database/{sample}/{sample}_rmod.nni",
-        nog="results/rmod_database/{sample}/{sample}_rmod.nog",
-        nsq="results/rmod_database/{sample}/{sample}_rmod.nsq",
+        multiext("results/rmod_database/{sample}/{sample}_rmod", ".nhr", ".nin", ".njs", ".nnd", ".nni", ".nog", ".nsq"),
         translation="results/rmod_database/{sample}/{sample}_rmod.translation",
     log:
         "logs/{sample}_build_database.log",
     conda:
         "envs/rmod_database.yaml"
     shell:
-        """filename={output.nhr}; basename="${{filename%.nhr}}" && BuildDatabase -name ${{basename}} {input.genome} &> {log}"""
+        """filename={output[0]}; basename="${{filename%.nhr}}" && BuildDatabase -name ${{basename}} {input.genome} &> {log}"""
 
 
 rule run_repeatmodeler2:
