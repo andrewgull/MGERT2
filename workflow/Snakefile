@@ -19,8 +19,10 @@ rule build_database:
         "logs/{sample}_build_database.log",
     conda:
         "envs/rmod_database.yaml"
+    params:
+        basename=lambda wildcards: f"results/rmod_database/{wildcards.sample}/{wildcards.sample}_rmod",
     shell:
-        """filename={output[0]}; basename="${{filename%.nhr}}" && BuildDatabase -name ${{basename}} {input.genome} &> {log}"""
+        """BuildDatabase -name {params.basename} {input.genome} &> {log}"""
 
 
 rule run_repeatmodeler2:
