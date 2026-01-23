@@ -1,3 +1,5 @@
+default_language_version:
+  python: python3
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -8,10 +10,23 @@ repos:
       - id: check-added-large-files
         args: ['--maxkb=500'] # Prevents accidentally committing large FASTQ/VCF files
 
+  - repo: https://github.com/asottile/reorder-python-imports
+    rev: v3.16.0
+    hooks:
+      - id: reorder-python-imports
+        args: ["--py3-plus"]
+
   - repo: https://github.com/psf/black
     rev: 23.12.1
     hooks:
       - id: black # Auto-formats your code to PEP8 standards
+
+  - repo: https://github.com/snakemake/snakefmt
+    rev: v0.11.2
+    hooks:
+      - id: snakefmt
+        args: ["-l", "130"]
+        files: ^workflow/(Snakefile|rules/.*\.smk)$
 
   - repo: local
     hooks:
@@ -20,5 +35,5 @@ repos:
         entry: pytest
         language: system
         pass_filenames: false
-        files: \.py$
-        args: ["--cov=.", "--cov-fail-under=90"]
+        files: ^workflow/scripts/.*\.py$
+        args: ["--cov=workflow/scripts", "--cov-fail-under=90"]
