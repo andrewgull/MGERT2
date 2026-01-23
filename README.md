@@ -1,11 +1,12 @@
 # MGERT2
 
 [![Unit Tests](https://github.com/andrewgull/MGERT2/actions/workflows/units.yml/badge.svg)](https://github.com/andrewgull/MGERT2/actions/workflows/units.yml)
-[![Python Code Quality](https://github.com/andrewgull/MGERT2/actions/workflows/test-and-coverage.yml/badge.svg)](https://github.com/andrewgull/MGERT2/actions/workflows/test-and-coverage.yml)
+[![Code Coverage](https://github.com/andrewgull/MGERT2/actions/workflows/test-and-coverage.yml/badge.svg)](https://github.com/andrewgull/MGERT2/actions/workflows/test-and-coverage.yml)
 [![Small integration test](https://github.com/andrewgull/MGERT2/actions/workflows/integration.yml/badge.svg)](https://github.com/andrewgull/MGERT2/actions/workflows/integration.yml)
 [![Snakemake Dry Run Check](https://github.com/andrewgull/MGERT2/actions/workflows/snakemake-dry-run.yml/badge.svg)](https://github.com/andrewgull/MGERT2/actions/workflows/snakemake-dry-run.yml)
 [![Snakefile Formatting Check](https://github.com/andrewgull/MGERT2/actions/workflows/snakefmt.yml/badge.svg)](https://github.com/andrewgull/MGERT2/actions/workflows/snakefmt.yml)
 [![Python Code Style](https://github.com/andrewgull/MGERT2/actions/workflows/pycodestyle.yml/badge.svg)](https://github.com/andrewgull/MGERT2/actions/workflows/pycodestyle.yml)
+[![Markdown Style](https://github.com/andrewgull/MGERT2/actions/workflows/markdown-lint.yml/badge.svg)](https://github.com/andrewgull/MGERT2/actions/workflows/markdown-lint.yml)
 ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/andrewgull/MGERT2?utm_source=oss&utm_medium=github&utm_campaign=andrewgull%2FMGERT2&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
 # Introduction
