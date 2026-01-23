@@ -12,7 +12,7 @@
 ## Introduction
 
 This is a rework of [MGERT](https://github.com/andrewgull/MGERT) -
-aka a big-ass 6 year old python script which was slain by "dependency hell".
+aka a big-ass 6-year-old Python script which was slain by "dependency hell".
 
 Check the Issues tab and [Project requirements](docs/requirements.md) to get started.
 
