@@ -26,7 +26,7 @@ repos:
     hooks:
       - id: snakefmt
         args: ["-l", "130"]
-        files: ^workflow/Snakefile$
+        files: ^workflow/(Snakefile|rules/.*\.smk)$
 
   - repo: local
     hooks:
