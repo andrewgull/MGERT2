@@ -72,7 +72,7 @@ rule repeatmasker:
         "logs/{sample}_repeatmasker.log",
     params:
         dir="results/repeatmasker/{sample}/",
-        engine="ncbi",
+        engine="wublast",
     threads: 8
     conda:
         "envs/repeatmasker.yaml"
@@ -85,7 +85,10 @@ rule repeatmasker:
             -lib {input.te_lib} \
             -dir {params.dir} \
             -gff \
+            -s \
+            -engine {params.engine} \
             -xsmall \
+            -nocut \
             {input.fasta} > {log} 2>&1
         """
 
