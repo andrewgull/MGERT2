@@ -18,14 +18,14 @@ rule build_database:
     log:
         "logs/{sample}_build_database.log",
     conda:
-        "envs/rmod_database.yaml"
+        "envs/repeatmodeler.yaml"
     params:
         basename=lambda wildcards: f"results/rmod_database/{wildcards.sample}/{wildcards.sample}_rmod",
     shell:
         """BuildDatabase -name {params.basename} {input.genome} &> {log}"""
 
 
-rule run_repeatmodeler2:
+rule repeatmodeler:
     """
     Run RepeatModeler2 using the database files from the previous rule
     """
@@ -37,7 +37,7 @@ rule run_repeatmodeler2:
         "logs/{sample}_run_repeatmodeler2.log",
     threads: 8
     conda:
-        "envs/rmod_database.yaml"
+        "envs/repeatmodeler.yaml"
     params:
         db_basename=lambda wildcards, input: input.nhr.replace(".nhr", ""),
     script:
@@ -49,6 +49,8 @@ rule collect_te:
         families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
     output:
         collection="results/collect_te/{sample}/{sample}_family.fa",
+    log:
+        "logs/{sample}_collect_te.log",
     params:
         te_name=config.get("te_name", ""),
     conda:
@@ -57,9 +59,40 @@ rule collect_te:
         "scripts/collect_te.py"
 
 
+rule repeatmasker:
+    input:
+        fasta="data/{sample}.fasta.gz",
+        te_lib="results/collect_te/{sample}/{sample}_family.fa",
+    output:
+        masked_fasta="results/repeatmasker/{sample}/{sample}.fasta.masked",
+        out_file="results/repeatmasker/{sample}/{sample}.fasta.out",
+        cat_file="results/repeatmasker/{sample}/{sample}.fasta.cat.gz",
+        gff="results/repeatmasker/{sample}/{sample}.fasta.out.gff",
+    log:
+        "logs/{sample}_repeatmasker.log",
+    params:
+        dir="results/repeatmasker/{sample}/",
+        engine="ncbi",
+    threads: 8
+    conda:
+        "envs/repeatmasker.yaml"
+    shell:
+        """
+        # RepeatMasker outputs to the same directory as the input FASTA by default.
+        # We use -dir to redirect it to our results folder.
+        RepeatMasker \
+            -pa {threads} \
+            -lib {input.te_lib} \
+            -dir {params.dir} \
+            -gff \
+            -xsmall \
+            {input.fasta} > {log} 2>&1
+        """
+
+
 rule final:
     input:
-        families="results/collect_te/{sample}/{sample}_family.fa",
+        gff="results/repeatmasker/{sample}/{sample}.fasta.out.gff",
     output:
         touch("results/final/{sample}.done"),
     shell:
