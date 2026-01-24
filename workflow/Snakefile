@@ -64,14 +64,10 @@ rule repeatmasker:
         fasta="data/{sample}.fasta.gz",
         te_lib="results/collect_te/{sample}/{sample}_family.fa",
     output:
-        masked_fasta="results/repeatmasker/{sample}/{sample}.fasta.masked",
-        out_file="results/repeatmasker/{sample}/{sample}.fasta.out",
-        cat_file="results/repeatmasker/{sample}/{sample}.fasta.cat.gz",
-        gff="results/repeatmasker/{sample}/{sample}.fasta.out.gff",
+        repeatmasker_dir=directory("results/repeatmasker/{sample}"),
     log:
         "logs/{sample}_repeatmasker.log",
     params:
-        dir="results/repeatmasker/{sample}/",
         engine="wublast",
         extra=" -s -nocut",
     threads: 8
@@ -79,12 +75,10 @@ rule repeatmasker:
         "envs/repeatmasker.yaml"
     shell:
         """
-        # RepeatMasker outputs to the same directory as the input FASTA by default.
-        # We use -dir to redirect it to our results folder.
         RepeatMasker \
             -pa {threads} \
             -lib {input.te_lib} \
-            -dir {params.dir} \
+            -dir {output.repeatmasker_dir} \
             -gff \
             -engine {params.engine} \
             {params.extra} \
@@ -94,7 +88,7 @@ rule repeatmasker:
 
 rule final:
     input:
-        gff="results/repeatmasker/{sample}/{sample}.fasta.out.gff",
+        repeatmasker_dir=directory("results/repeatmasker/{sample}"),
     output:
         touch("results/final/{sample}.done"),
     shell:
