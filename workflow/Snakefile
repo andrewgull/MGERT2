@@ -88,18 +88,19 @@ rule repeatmasker:
 rule plot_repeat_landscape:
     input:
         repeatmasker_dir="results/repeatmasker/{sample}",
+        genome="data/{sample}.fasta.gz",
     output:
-        plot="results/repeatmasker/{sample}/{sample}_repeat_landscape.png",
+        plot="results/plots/{sample}_repeat_landscape.png",
     log:
         "results/logs/{sample}_plot_repeat_landscape.log",
     conda:
         "envs/matplotlib.yaml"
     script:
-        "scripts/plot_repeat_landscape.py"
+        "scripts/repeat_landscape.py"
 
 rule final:
     input:
-        repeatmasker_dir="results/repeatmasker/{sample}",
+        plot="results/plots/{sample}_repeat_landscape.png",
     output:
         touch("results/final/{sample}.done"),
     shell:
