@@ -59,6 +59,29 @@ def mock_rm_out(tmp_path):
     return str(out_path)
 
 
+def test_parse_repeatmasker_out_bad_line(tmp_path, caplog):
+    """Verifies that bad lines are logged as warnings."""
+    out_path = tmp_path / "bad.out"
+    header = ["header1\n", "header2\n", "header3\n"]
+    # Good line
+    line1 = "  100    5.0  0.0  0.0  chr1           1     100   (1000)  +  L1              LINE/L1               1  100    (0)    1\n"
+    # Bad line (too many columns)
+    line2 = "  100    5.0  0.0  0.0  chr1           1     100   (1000)  +  L1              LINE/L1               1  100    (0)    1 EXTRA\n"
+    
+    with open(out_path, "w") as f:
+        f.writelines(header)
+        f.write(line1)
+        f.write(line2)
+        
+    from workflow.scripts.repeat_landscape import parse_repeatmasker_out
+    
+    with caplog.at_level("WARNING"):
+        df = parse_repeatmasker_out(str(out_path), 1000)
+    
+    assert "Skipping bad line" in caplog.text
+    assert len(df) == 1  # Only the good line should be parsed
+
+
 def test_get_genome_size(mock_fasta, mock_fasta_gz):
     # ATGC (4) + NNNN (4) = 8
     assert get_genome_size(mock_fasta) == 8
@@ -118,7 +141,6 @@ def test_main_integration(tmp_path, mock_fasta, mock_rm_out):
 
 def test_main_no_out_file(tmp_path, mock_fasta):
     from workflow.scripts.repeat_landscape import main
-    import pytest
 
     output_img = tmp_path / "fail_landscape.png"
     # empty_dir has no .out files
