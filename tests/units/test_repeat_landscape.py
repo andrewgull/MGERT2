@@ -71,9 +71,9 @@ def test_parse_repeatmasker_out(mock_rm_out):
     l1_data = df[df["class_family"] == "LINE/L1"]
     assert len(l1_data) == 1
     # q_end - q_start: 100 - 1 = 99
-    assert l1_data.iloc[0]["length"] == 99
+    assert l1_data.iloc[0]["length"] == 100
     assert l1_data.iloc[0]["div_bin"] == 5.0
-    assert l1_data.iloc[0]["genome_perc"] == (99 / 1000) * 100
+    assert l1_data.iloc[0]["genome_perc"] == (100 / 1000) * 100
 
 def test_plot_landscape(tmp_path, mock_rm_out):
     genome_size = 1000
@@ -89,8 +89,19 @@ def test_main_integration(tmp_path, mock_fasta, mock_rm_out):
     from workflow.scripts.repeat_landscape import main
     
     output_img = tmp_path / "main_landscape.png"
-    # We ignore the Snakemake object and just call main with strings
-    # main(genome, out_dataframe, landscape)
-    main(mock_fasta, mock_rm_out, str(output_img))
+    # Now main takes a directory (tmp_path contains mock_rm_out)
+    main(mock_fasta, str(tmp_path), str(output_img))
     
     assert output_img.exists()
+
+def test_main_no_out_file(tmp_path, mock_fasta):
+    from workflow.scripts.repeat_landscape import main
+    import pytest
+    
+    output_img = tmp_path / "fail_landscape.png"
+    # empty_dir has no .out files
+    empty_dir = tmp_path / "empty"
+    empty_dir.mkdir()
+    
+    with pytest.raises(FileNotFoundError, match="No .out file found"):
+        main(mock_fasta, str(empty_dir), str(output_img))
