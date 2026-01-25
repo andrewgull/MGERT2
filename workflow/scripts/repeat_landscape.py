@@ -56,8 +56,15 @@ def parse_repeatmasker_out(filepath: str, genome_size: int) -> pd.DataFrame:
         logger.error(f"Invalid genome_size: {genome_size}. Must be positive.")
         raise ValueError(f"Invalid genome_size: {genome_size}. Must be positive.")
     
+    def on_bad_line(bad_line):
+        logger.warning(f"Skipping bad line in {filepath}: {bad_line}")
+        return None
+
     # Read with flexible space delimiter, handle multi-space issues
-    df = pd.read_csv(filepath, skiprows=3, sep=r"\s+", names=cols, engine="python", on_bad_lines="skip")
+    df = pd.read_csv(
+        filepath, skiprows=3, sep=r"\s+", names=cols, engine="python", on_bad_lines=on_bad_line
+    )
+    
 
     # Calculate length of each hit
     df["length"] = df["q_end"] - df["q_start"] + 1
