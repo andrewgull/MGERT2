@@ -68,8 +68,8 @@ rule repeatmasker:
     log:
         "results/logs/{sample}_repeatmasker.log",
     params:
-        engine=config["repeatmasker"]["engine"],
-        extra=config["repeatmasker"]["extra"],
+        engine=config.get("repeatmasker", {}).get("engine", "wublast"),
+        extra=config.get("repeatmasker", {}).get("extra", ""),
     threads: 8
     conda:
         "envs/repeatmasker.yaml"
@@ -85,6 +85,7 @@ rule repeatmasker:
             {input.fasta} > {log} 2>&1
         """
 
+
 rule plot_repeat_landscape:
     input:
         repeatmasker_dir="results/repeatmasker/{sample}",
@@ -97,6 +98,7 @@ rule plot_repeat_landscape:
         "envs/matplotlib.yaml"
     script:
         "scripts/repeat_landscape.py"
+
 
 rule final:
     input:
