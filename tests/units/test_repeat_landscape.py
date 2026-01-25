@@ -64,8 +64,8 @@ def test_parse_repeatmasker_out(mock_rm_out):
     assert isinstance(df, pd.DataFrame)
     assert not df.empty
     
-    # L1: len 99 (100-1), div 5.0 -> bin 5.0
-    # Alu: len 50 (250-200), div 10.0 -> bin 10.0
+    # L1: len 99 (100-1+1), div 5.0 -> bin 5.0
+    # Alu: len 50 (250-200+1), div 10.0 -> bin 10.0
     # genome_perc calculation: (length / 1000) * 100
     
     l1_data = df[df["class_family"] == "LINE/L1"]
@@ -74,6 +74,10 @@ def test_parse_repeatmasker_out(mock_rm_out):
     assert l1_data.iloc[0]["length"] == 100
     assert l1_data.iloc[0]["div_bin"] == 5.0
     assert l1_data.iloc[0]["genome_perc"] == (100 / 1000) * 100
+
+def test_parse_repeatmasker_out_zero_genome_size(mock_rm_out):
+    with pytest.raises(ValueError, match="Invalid genome_size: 0. Must be positive."):
+        parse_repeatmasker_out(mock_rm_out, 0)
 
 def test_plot_landscape(tmp_path, mock_rm_out):
     genome_size = 1000
