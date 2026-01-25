@@ -1,7 +1,5 @@
 import pytest
 import pandas as pd
-import numpy as np
-import os
 import gzip
 from workflow.scripts.repeat_landscape import (
     get_genome_size,
@@ -72,8 +70,6 @@ def test_parse_repeatmasker_out_bad_line(tmp_path, caplog):
         f.writelines(header)
         f.write(line1)
         f.write(line2)
-        
-    from workflow.scripts.repeat_landscape import parse_repeatmasker_out
     
     with caplog.at_level("WARNING"):
         df = parse_repeatmasker_out(str(out_path), 1000)
