@@ -1,6 +1,5 @@
 name: Snakefile Formatting Check
 
-# 1. Define when this workflow should run
 on:
   push:
     branches:
@@ -11,30 +10,21 @@ on:
       - main
       - dev
 
-# 2. Define the job
 jobs:
   lint:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 2.1: Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2.2: Setup Python
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Pixi
+        uses: prefix-dev/setup-pixi@v0.9.3
         with:
-          python-version: '3.12'
+          pixi-version: v0.63.2
+          cache: true
+          environments: default
 
-      # Step 2.3: Install snakefmt
-      - name: Install dependencies
+      - name: Run snakefmt check on Snakefile
         run: |
-          python -m pip install --upgrade pip
-          pip install snakefmt==0.11.2
-
-      # Step 2.4: Run snakefmt check
-      - name: Run snakefmt Check on Snakefile
-        working-directory: tests/integration
-        run: |
-          snakefmt --check --verbose -l 130 ../../workflow/Snakefile
+          pixi run format-smk-check
