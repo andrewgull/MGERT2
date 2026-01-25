@@ -35,9 +35,7 @@ def run_repeatmodeler_logic(database, threads, output_file, log_file):
 
     # Open in append mode because setup_logging might have already opened it
     with open(log_file, "a") as log:
-        process = subprocess.Popen(
-            command, stdout=log, stderr=subprocess.STDOUT, universal_newlines=True
-        )
+        process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, universal_newlines=True)
         process.wait()
 
     if process.returncode != 0:
