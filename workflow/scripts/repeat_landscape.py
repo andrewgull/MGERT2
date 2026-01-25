@@ -4,6 +4,15 @@ import seaborn as sns
 import numpy as np
 import gzip
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 def parse_repeatmasker_out(filepath: str, genome_size: int) -> pd.DataFrame:
@@ -55,7 +64,7 @@ def parse_repeatmasker_out(filepath: str, genome_size: int) -> pd.DataFrame:
     )
 
     # Calculate length of each hit
-    df["length"] = df["q_end"] - df["q_start"]
+    df["length"] = df["q_end"] - df["q_start"] + 1
 
     # We group by divergence (rounded to nearest integer) and Repeat Class
     # Standard classes: LINE, SINE, LTR, DNA, etc.
@@ -121,18 +130,30 @@ def plot_landscape(data: pd.DataFrame, output_img: str) -> None:
     plt.legend(title="TE Family", bbox_to_anchor=(1.05, 1), loc="upper left")
     plt.tight_layout()
     plt.savefig(output_img, dpi=300)
-    print(f"Plot saved to {output_img}")
+    logger.info(f"Plot saved to {output_img}")
 
 
-def main(genome: str, out_dataframe: str, landscape: str) -> None:
+def main(genome: str, repeatmasker_dir: str, landscape: str) -> None:
     """
     Main execution function to generate a repeat landscape.
 
     Args:
         genome: Path to the genome FASTA file.
-        out_dataframe: Path to the RepeatMasker .out file.
+        repeatmasker_dir: Directory containing RepeatMasker output files.
         landscape: Path to save the output plot image.
     """
+    # Find the .out file in the repeatmasker_dir
+    out_files = sorted(f for f in os.listdir(repeatmasker_dir) if f.endswith(".out"))
+    if not out_files:
+        raise FileNotFoundError(f"No .out file found in {repeatmasker_dir}")
+    if len(out_files) > 1:
+        # Optionally pick one or warn, here we pick the first one
+        logger.warning(
+            f"Multiple .out files found in {repeatmasker_dir}. Using {out_files[0]}"
+        )
+    
+    out_dataframe = os.path.join(repeatmasker_dir, out_files[0])
+
     genome_size = get_genome_size(genome)
     df = parse_repeatmasker_out(out_dataframe, genome_size)
     plot_landscape(df, landscape)
@@ -140,5 +161,5 @@ def main(genome: str, out_dataframe: str, landscape: str) -> None:
 
 if __name__ == "__main__":
     main(
-        snakemake.input.genome, snakemake.repeatmasker_out, snakemake.output.plot
+        snakemake.input.genome, snakemake.input.repeatmasker_dir, snakemake.output.plot
     )
