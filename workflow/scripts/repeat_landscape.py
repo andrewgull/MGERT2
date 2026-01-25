@@ -52,16 +52,12 @@ def parse_repeatmasker_out(filepath: str, genome_size: int) -> pd.DataFrame:
         "r_left",
         "id",
     ]
-
+    if genome_size == 0:
+        logger.error(f"Invalid genome_size: {genome_size}. Must be positive.")
+        raise ValueError(f"Invalid genome_size: {genome_size}. Must be positive.")
+    
     # Read with flexible space delimiter, handle multi-space issues
-    df = pd.read_csv(
-        filepath, 
-        skiprows=3, 
-        sep=r"\s+", 
-        names=cols, 
-        engine="python",
-        on_bad_lines="skip"
-    )
+    df = pd.read_csv(filepath, skiprows=3, sep=r"\s+", names=cols, engine="python", on_bad_lines="skip")
 
     # Calculate length of each hit
     df["length"] = df["q_end"] - df["q_start"] + 1
@@ -120,9 +116,7 @@ def plot_landscape(data: pd.DataFrame, output_img: str) -> None:
     major_classes = data.groupby("class_family")["genome_perc"].sum().nlargest(5).index
     plot_data = data[data["class_family"].isin(major_classes)]
 
-    sns.barplot(
-        data=plot_data, x="div_bin", y="genome_perc", hue="class_family", dodge=False
-    )
+    sns.barplot(data=plot_data, x="div_bin", y="genome_perc", hue="class_family", dodge=False)
 
     plt.title("Genomic Repeat Landscape", fontsize=16)
     plt.xlabel("Divergence (Kimura distance %)", fontsize=12)
@@ -148,10 +142,8 @@ def main(genome: str, repeatmasker_dir: str, landscape: str) -> None:
         raise FileNotFoundError(f"No .out file found in {repeatmasker_dir}")
     if len(out_files) > 1:
         # Optionally pick one or warn, here we pick the first one
-        logger.warning(
-            f"Multiple .out files found in {repeatmasker_dir}. Using {out_files[0]}"
-        )
-    
+        logger.warning(f"Multiple .out files found in {repeatmasker_dir}. Using {out_files[0]}")
+
     out_dataframe = os.path.join(repeatmasker_dir, out_files[0])
 
     genome_size = get_genome_size(genome)
@@ -160,6 +152,4 @@ def main(genome: str, repeatmasker_dir: str, landscape: str) -> None:
 
 
 if __name__ == "__main__":
-    main(
-        snakemake.input.genome, snakemake.input.repeatmasker_dir, snakemake.output.plot
-    )
+    main(snakemake.input.genome, snakemake.input.repeatmasker_dir, snakemake.output.plot)
