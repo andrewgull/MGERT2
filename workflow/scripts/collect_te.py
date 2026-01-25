@@ -29,6 +29,4 @@ def main(input_fasta, output_fasta, te_name):
 
 
 if __name__ == "__main__":
-    main(
-        snakemake.input.families, snakemake.output.collection, snakemake.params.te_name
-    )
+    main(snakemake.input.families, snakemake.output.collection, snakemake.params.te_name)
