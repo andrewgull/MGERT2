@@ -16,7 +16,7 @@ rule build_database:
         multiext("results/rmod_database/{sample}/{sample}_rmod", ".nhr", ".nin", ".njs", ".nnd", ".nni", ".nog", ".nsq"),
         translation="results/rmod_database/{sample}/{sample}_rmod.translation",
     log:
-        "logs/{sample}_build_database.log",
+        "results/logs/{sample}_build_database.log",
     conda:
         "envs/repeatmodeler.yaml"
     params:
@@ -34,7 +34,7 @@ rule repeatmodeler:
     output:
         families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
     log:
-        "logs/{sample}_run_repeatmodeler2.log",
+        "results/logs/{sample}_run_repeatmodeler2.log",
     threads: 8
     conda:
         "envs/repeatmodeler.yaml"
@@ -50,7 +50,7 @@ rule collect_te:
     output:
         collection="results/collect_te/{sample}/{sample}_family.fa",
     log:
-        "logs/{sample}_collect_te.log",
+        "results/logs/{sample}_collect_te.log",
     params:
         te_name=config.get("te_name", ""),
     conda:
@@ -66,10 +66,10 @@ rule repeatmasker:
     output:
         repeatmasker_dir=directory("results/repeatmasker/{sample}"),
     log:
-        "logs/{sample}_repeatmasker.log",
+        "results/logs/{sample}_repeatmasker.log",
     params:
-        engine="wublast",
-        extra=" -s -nocut",
+        engine=config["repeatmasker"]["engine"],
+        extra=config["repeatmasker"]["extra"],
     threads: 8
     conda:
         "envs/repeatmasker.yaml"
@@ -85,6 +85,17 @@ rule repeatmasker:
             {input.fasta} > {log} 2>&1
         """
 
+rule plot_repeat_landscape:
+    input:
+        repeatmasker_dir="results/repeatmasker/{sample}",
+    output:
+        plot="results/repeatmasker/{sample}/{sample}_repeat_landscape.png",
+    log:
+        "results/logs/{sample}_plot_repeat_landscape.log",
+    conda:
+        "envs/matplotlib.yaml"
+    script:
+        "scripts/plot_repeat_landscape.py"
 
 rule final:
     input:
