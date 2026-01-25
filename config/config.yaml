@@ -3,3 +3,7 @@ samples:
   - "sample2"
 
 te_name: "Penelope"
+
+repeatmasker:
+  engine: "wublast"
+  extra: " -s -nocut"
