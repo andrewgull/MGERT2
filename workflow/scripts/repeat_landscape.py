@@ -52,7 +52,7 @@ def parse_repeatmasker_out(filepath: str, genome_size: int) -> pd.DataFrame:
         "r_left",
         "id",
     ]
-    if genome_size == 0:
+    if genome_size <= 0:
         logger.error(f"Invalid genome_size: {genome_size}. Must be positive.")
         raise ValueError(f"Invalid genome_size: {genome_size}. Must be positive.")
     
@@ -124,6 +124,7 @@ def plot_landscape(data: pd.DataFrame, output_img: str) -> None:
     plt.legend(title="TE Family", bbox_to_anchor=(1.05, 1), loc="upper left")
     plt.tight_layout()
     plt.savefig(output_img, dpi=300)
+    plt.close()
     logger.info(f"Plot saved to {output_img}")
 
 
