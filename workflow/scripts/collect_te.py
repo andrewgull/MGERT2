@@ -29,4 +29,13 @@ def main(input_fasta, output_fasta, te_name):
 
 
 if __name__ == "__main__":
-    main(snakemake.input.families, snakemake.output.collection, snakemake.params.te_name)
+    try:
+        main(snakemake.input.families, snakemake.output.collection, snakemake.params.te_name)
+    except NameError:
+        import argparse
+        parser = argparse.ArgumentParser(description="Collect TE sequences from a FASTA file")
+        parser.add_argument("--input-fasta", required=True, help="Path to the input FASTA file")
+        parser.add_argument("--output-fasta", required=True, help="Path to the output FASTA file")
+        parser.add_argument("--te-name", required=True, help="Prefix of the sequence IDs to collect")
+        args = parser.parse_args()
+        main(args.input_fasta, args.output_fasta, args.te_name)

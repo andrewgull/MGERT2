@@ -70,9 +70,24 @@ def run_repeatmodeler_logic(database, threads, output_file, log_file):
 
 
 if __name__ == "__main__":
-    run_repeatmodeler_logic(
-        database=snakemake.params.db_basename,
-        threads=snakemake.threads,
-        output_file=snakemake.output.families,
-        log_file=snakemake.log[0],
+    try:
+        run_repeatmodeler_logic(
+            database=snakemake.params.db_basename,
+            threads=snakemake.threads,
+            output_file=snakemake.output.families,
+            log_file=snakemake.log[0],
+        )
+    except NameError:
+        import argparse
+        parser = argparse.ArgumentParser(description="Run RepeatModeler")
+        parser.add_argument("--database", required=True, help="Path to the database file")
+        parser.add_argument("--threads", type=int, default=1, help="Number of threads to use")
+        parser.add_argument("--output-file", required=True, help="Path to the output file")
+        parser.add_argument("--log-file", required=True, help="Path to the log file")
+        args = parser.parse_args()
+        run_repeatmodeler_logic(
+            database=args.database,
+            threads=args.threads,
+            output_file=args.output_file,
+            log_file=args.log_file,
     )
