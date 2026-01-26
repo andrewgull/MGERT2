@@ -4,13 +4,7 @@ import seaborn as sns
 import gzip
 import os
 import logging
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+from utils import setup_logging
 logger = logging.getLogger(__name__)
 
 
@@ -131,7 +125,7 @@ def plot_landscape(data: pd.DataFrame, output_img: str) -> None:
     logger.info(f"Plot saved to {output_img}")
 
 
-def main(genome: str, repeatmasker_dir: str, landscape: str) -> None:
+def main(genome: str, repeatmasker_dir: str, landscape: str, log_file: str = None) -> None:
     """
     Main execution function to generate a repeat landscape.
 
@@ -139,7 +133,9 @@ def main(genome: str, repeatmasker_dir: str, landscape: str) -> None:
         genome: Path to the genome FASTA file.
         repeatmasker_dir: Directory containing RepeatMasker output files.
         landscape: Path to save the output plot image.
+        log_file: Path to the log file.
     """
+    setup_logging(log_file, __name__)
     # Find the .out file in the repeatmasker_dir
     out_files = sorted(f for f in os.listdir(repeatmasker_dir) if f.endswith(".out"))
     if not out_files:
@@ -158,7 +154,7 @@ def main(genome: str, repeatmasker_dir: str, landscape: str) -> None:
 if __name__ == "__main__":
     try:
         # When run via Snakemake
-        main(snakemake.input.genome, snakemake.input.repeatmasker_dir, snakemake.output.plot)
+        main(snakemake.input.genome, snakemake.input.repeatmasker_dir, snakemake.output.plot, snakemake.log[0] if snakemake.log else None)
     except NameError:
         # When run standalone
         import argparse
@@ -167,5 +163,6 @@ if __name__ == "__main__":
         parser.add_argument("--genome", required=True, help="Path to genome FASTA")
         parser.add_argument("--repeatmasker-dir", required=True, help="RepeatMasker output directory")
         parser.add_argument("--output", required=True, help="Output plot path")
+        parser.add_argument("--log-file", help="Path to the log file")
         args = parser.parse_args()
-        main(args.genome, args.repeatmasker_dir, args.output)
+        main(args.genome, args.repeatmasker_dir, args.output, args.log_file)

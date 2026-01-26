@@ -4,24 +4,12 @@ import shutil
 import glob
 import sys
 import logging
+from utils import setup_logging
+logger = logging.getLogger(__name__)
 
 
-def setup_logging(log_file=None):
-    """Set up logging to stdout and optionally to a file."""
-    handlers = [logging.StreamHandler(sys.stdout)]
-    if log_file:
-        handlers.append(logging.FileHandler(log_file, mode="a"))
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=handlers,
-    )
-    return logging.getLogger(__name__)
-
-
-def run_repeatmodeler_logic(database, threads, output_file, log_file):
-    logger = setup_logging(log_file)
+def run_repeatmodeler_logic(database, threads, output_file, log_file: str):
+    setup_logging(log_file, __name__)
 
     command = [
         "RepeatModeler",
