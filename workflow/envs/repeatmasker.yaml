@@ -1,4 +1,5 @@
 channels:
     - bioconda
+    - conda-forge
 dependencies:
     - repeatmasker=4.2.2
