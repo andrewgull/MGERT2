@@ -68,7 +68,7 @@ rule repeatmasker:
     log:
         "results/logs/{sample}_repeatmasker.log",
     params:
-        engine=config.get("repeatmasker", {}).get("engine", "wublast"),
+        engine=config.get("repeatmasker", {}).get("engine", "rmblast"),
         extra=config.get("repeatmasker", {}).get("extra", ""),
     threads: 8
     conda:

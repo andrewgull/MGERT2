@@ -5,5 +5,5 @@ samples:
 te_name: "Penelope"
 
 repeatmasker:
-  engine: "wublast"
+  engine: "rmblast"
   extra: " -s -nocut"
