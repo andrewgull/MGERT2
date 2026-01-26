@@ -4,10 +4,12 @@ from io import StringIO
 from Bio import SeqIO
 import pytest
 
-# Add the project root to sys.path to allow importing from workflow.scripts
+# Add the project root and scripts directory to sys.path to allow imports
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+scripts_dir = os.path.join(project_root, "workflow/scripts")
+for d in [project_root, scripts_dir]:
+    if d not in sys.path:
+        sys.path.insert(0, d)
 
 from workflow.scripts.collect_te import collect_te, main
 

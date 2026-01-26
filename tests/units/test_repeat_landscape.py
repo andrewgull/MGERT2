@@ -1,6 +1,16 @@
+import os
+import sys
 import pytest
 import pandas as pd
 import gzip
+
+# Add the project root and scripts directory to sys.path to allow imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+scripts_dir = os.path.join(project_root, "workflow/scripts")
+for d in [project_root, scripts_dir]:
+    if d not in sys.path:
+        sys.path.insert(0, d)
+
 from workflow.scripts.repeat_landscape import (
     get_genome_size,
     parse_repeatmasker_out,
