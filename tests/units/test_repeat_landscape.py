@@ -105,12 +105,12 @@ def test_parse_repeatmasker_out(mock_rm_out):
 
 
 def test_parse_repeatmasker_out_zero_genome_size(mock_rm_out):
-    with pytest.raises(ValueError, match="Invalid genome_size: 0. Must be positive."):
+    with pytest.raises(ValueError, match=r"Invalid genome_size: 0\. Must be positive\."):
         parse_repeatmasker_out(mock_rm_out, 0)
 
 
 def test_parse_repeatmasker_out_negative_genome_size(mock_rm_out):
-    with pytest.raises(ValueError, match="Invalid genome_size: -100. Must be positive."):
+    with pytest.raises(ValueError, match=r"Invalid genome_size: -100\. Must be positive\."):
         parse_repeatmasker_out(mock_rm_out, -100)
 
 
@@ -143,5 +143,5 @@ def test_main_no_out_file(tmp_path, mock_fasta):
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
 
-    with pytest.raises(FileNotFoundError, match="No .out file found"):
+    with pytest.raises(FileNotFoundError, match=r"No \.out file found"):
         main(mock_fasta, str(empty_dir), str(output_img))
