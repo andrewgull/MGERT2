@@ -3,10 +3,12 @@ import sys
 import pytest
 from unittest.mock import MagicMock, patch, mock_open
 
-# Add the project root to sys.path to allow importing from workflow.scripts
+# Add the project root and scripts directory to sys.path to allow imports
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+scripts_dir = os.path.join(project_root, "workflow/scripts")
+for d in [project_root, scripts_dir]:
+    if d not in sys.path:
+        sys.path.insert(0, d)
 
 from workflow.scripts.run_repeatmodeler import run_repeatmodeler_logic
 

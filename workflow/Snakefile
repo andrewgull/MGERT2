@@ -16,16 +16,16 @@ rule build_database:
         multiext("results/rmod_database/{sample}/{sample}_rmod", ".nhr", ".nin", ".njs", ".nnd", ".nni", ".nog", ".nsq"),
         translation="results/rmod_database/{sample}/{sample}_rmod.translation",
     log:
-        "logs/{sample}_build_database.log",
+        "results/logs/{sample}_build_database.log",
     conda:
-        "envs/rmod_database.yaml"
+        "envs/repeatmodeler.yaml"
     params:
         basename=lambda wildcards: f"results/rmod_database/{wildcards.sample}/{wildcards.sample}_rmod",
     shell:
         """BuildDatabase -name {params.basename} {input.genome} &> {log}"""
 
 
-rule run_repeatmodeler2:
+rule repeatmodeler:
     """
     Run RepeatModeler2 using the database files from the previous rule
     """
@@ -34,10 +34,10 @@ rule run_repeatmodeler2:
     output:
         families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
     log:
-        "logs/{sample}_run_repeatmodeler2.log",
+        "results/logs/{sample}_run_repeatmodeler2.log",
     threads: 8
     conda:
-        "envs/rmod_database.yaml"
+        "envs/repeatmodeler.yaml"
     params:
         db_basename=lambda wildcards, input: input.nhr.replace(".nhr", ""),
     script:
@@ -49,6 +49,8 @@ rule collect_te:
         families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
     output:
         collection="results/collect_te/{sample}/{sample}_family.fa",
+    log:
+        "results/logs/{sample}_collect_te.log",
     params:
         te_name=config.get("te_name", ""),
     conda:
@@ -57,9 +59,50 @@ rule collect_te:
         "scripts/collect_te.py"
 
 
+rule repeatmasker:
+    input:
+        fasta="data/{sample}.fasta.gz",
+        te_lib="results/collect_te/{sample}/{sample}_family.fa",
+    output:
+        repeatmasker_dir=directory("results/repeatmasker/{sample}"),
+    log:
+        "results/logs/{sample}_repeatmasker.log",
+    params:
+        engine=config.get("repeatmasker", {}).get("engine", "rmblast"),
+        extra=config.get("repeatmasker", {}).get("extra", ""),
+    threads: 8
+    conda:
+        "envs/repeatmasker.yaml"
+    shell:
+        """
+        RepeatMasker \
+            -pa {threads} \
+            -lib {input.te_lib} \
+            -dir {output.repeatmasker_dir} \
+            -gff \
+            -engine {params.engine} \
+            {params.extra} \
+            {input.fasta} > {log} 2>&1
+        """
+
+
+rule plot_repeat_landscape:
+    input:
+        repeatmasker_dir="results/repeatmasker/{sample}",
+        genome="data/{sample}.fasta.gz",
+    output:
+        plot="results/plots/{sample}_repeat_landscape.png",
+    log:
+        "results/logs/{sample}_plot_repeat_landscape.log",
+    conda:
+        "envs/matplotlib.yaml"
+    script:
+        "scripts/repeat_landscape.py"
+
+
 rule final:
     input:
-        families="results/collect_te/{sample}/{sample}_family.fa",
+        plot="results/plots/{sample}_repeat_landscape.png",
     output:
         touch("results/final/{sample}.done"),
     shell:

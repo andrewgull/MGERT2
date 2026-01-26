@@ -23,6 +23,7 @@ RM_*/
 
 # snakemake files
 .snakemake/
+results/
 
 # IDE files?
 .DS_Store
@@ -76,15 +77,8 @@ cover/
 *.mo
 *.pot
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
+# manual tests
+software_tests/
 
 # Scrapy stuff:
 .scrapy

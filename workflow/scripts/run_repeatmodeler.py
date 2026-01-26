@@ -4,24 +4,13 @@ import shutil
 import glob
 import sys
 import logging
+from utils import setup_logging
+
+logger = logging.getLogger(__name__)
 
 
-def setup_logging(log_file=None):
-    """Set up logging to stdout and optionally to a file."""
-    handlers = [logging.StreamHandler(sys.stdout)]
-    if log_file:
-        handlers.append(logging.FileHandler(log_file, mode="a"))
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=handlers,
-    )
-    return logging.getLogger(__name__)
-
-
-def run_repeatmodeler_logic(database, threads, output_file, log_file):
-    logger = setup_logging(log_file)
+def run_repeatmodeler_logic(database, threads, output_file, log_file: str):
+    setup_logging(log_file, __name__)
 
     command = [
         "RepeatModeler",
@@ -35,9 +24,7 @@ def run_repeatmodeler_logic(database, threads, output_file, log_file):
 
     # Open in append mode because setup_logging might have already opened it
     with open(log_file, "a") as log:
-        process = subprocess.Popen(
-            command, stdout=log, stderr=subprocess.STDOUT, universal_newlines=True
-        )
+        process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, universal_newlines=True)
         process.wait()
 
     if process.returncode != 0:
@@ -72,9 +59,25 @@ def run_repeatmodeler_logic(database, threads, output_file, log_file):
 
 
 if __name__ == "__main__":
-    run_repeatmodeler_logic(
-        database=snakemake.params.db_basename,
-        threads=snakemake.threads,
-        output_file=snakemake.output.families,
-        log_file=snakemake.log[0],
-    )
+    try:
+        run_repeatmodeler_logic(
+            database=snakemake.params.db_basename,
+            threads=snakemake.threads,
+            output_file=snakemake.output.families,
+            log_file=snakemake.log[0],
+        )
+    except NameError:
+        import argparse
+
+        parser = argparse.ArgumentParser(description="Run RepeatModeler")
+        parser.add_argument("--database", required=True, help="Path to the database file")
+        parser.add_argument("--threads", type=int, default=1, help="Number of threads to use")
+        parser.add_argument("--output-file", required=True, help="Path to the output file")
+        parser.add_argument("--log-file", required=True, help="Path to the log file")
+        args = parser.parse_args()
+        run_repeatmodeler_logic(
+            database=args.database,
+            threads=args.threads,
+            output_file=args.output_file,
+            log_file=args.log_file,
+        )
