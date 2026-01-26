@@ -1,6 +1,6 @@
 import logging
 from Bio import SeqIO
-from workflow.scripts.utils import setup_logging
+from utils import setup_logging
 
 logger = logging.getLogger(__name__)
 

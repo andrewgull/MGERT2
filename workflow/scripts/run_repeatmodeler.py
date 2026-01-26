@@ -4,7 +4,7 @@ import shutil
 import glob
 import sys
 import logging
-from workflow.scripts.utils import setup_logging
+from utils import setup_logging
 
 logger = logging.getLogger(__name__)
 
