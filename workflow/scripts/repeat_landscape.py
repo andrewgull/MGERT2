@@ -156,4 +156,16 @@ def main(genome: str, repeatmasker_dir: str, landscape: str) -> None:
 
 
 if __name__ == "__main__":
-    main(snakemake.input.genome, snakemake.input.repeatmasker_dir, snakemake.output.plot)
+    try:
+        # When run via Snakemake
+        main(snakemake.input.genome, snakemake.input.repeatmasker_dir, snakemake.output.plot)
+    except NameError:
+        # When run standalone
+        import argparse
+
+        parser = argparse.ArgumentParser(description="Generate repeat landscape plot")
+        parser.add_argument("--genome", required=True, help="Path to genome FASTA")
+        parser.add_argument("--repeatmasker-dir", required=True, help="RepeatMasker output directory")
+        parser.add_argument("--output", required=True, help="Output plot path")
+        args = parser.parse_args()
+        main(args.genome, args.repeatmasker_dir, args.output)
