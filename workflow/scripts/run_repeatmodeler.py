@@ -79,6 +79,7 @@ if __name__ == "__main__":
         )
     except NameError:
         import argparse
+
         parser = argparse.ArgumentParser(description="Run RepeatModeler")
         parser.add_argument("--database", required=True, help="Path to the database file")
         parser.add_argument("--threads", type=int, default=1, help="Number of threads to use")
@@ -90,4 +91,4 @@ if __name__ == "__main__":
             threads=args.threads,
             output_file=args.output_file,
             log_file=args.log_file,
-    )
+        )
