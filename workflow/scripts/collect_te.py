@@ -1,6 +1,7 @@
 import logging
 from Bio import SeqIO
 from utils import setup_logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +37,12 @@ def main(input_fasta, output_fasta, te_name, log_file=None):
 
 if __name__ == "__main__":
     try:
-        main(snakemake.input.families, snakemake.output.collection, snakemake.params.te_name, snakemake.log[0] if snakemake.log else None)
+        main(
+            snakemake.input.families,
+            snakemake.output.collection,
+            snakemake.params.te_name,
+            snakemake.log[0] if snakemake.log else None,
+        )
     except NameError:
         import argparse
 

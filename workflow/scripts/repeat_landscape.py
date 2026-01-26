@@ -5,6 +5,7 @@ import gzip
 import os
 import logging
 from utils import setup_logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -154,7 +155,12 @@ def main(genome: str, repeatmasker_dir: str, landscape: str, log_file: str = Non
 if __name__ == "__main__":
     try:
         # When run via Snakemake
-        main(snakemake.input.genome, snakemake.input.repeatmasker_dir, snakemake.output.plot, snakemake.log[0] if snakemake.log else None)
+        main(
+            snakemake.input.genome,
+            snakemake.input.repeatmasker_dir,
+            snakemake.output.plot,
+            snakemake.log[0] if snakemake.log else None,
+        )
     except NameError:
         # When run standalone
         import argparse

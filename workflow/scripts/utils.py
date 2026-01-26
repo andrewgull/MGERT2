@@ -1,6 +1,7 @@
 import logging
 import sys
 
+
 def setup_logging(log_file=None, logger_name=None):
     """Set up logging to stdout and optionally to a file."""
     handlers = [logging.StreamHandler(sys.stdout)]
