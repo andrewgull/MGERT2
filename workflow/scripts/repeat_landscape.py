@@ -4,7 +4,7 @@ import seaborn as sns
 import gzip
 import os
 import logging
-from utils import setup_logging
+from workflow.scripts.utils import setup_logging
 
 logger = logging.getLogger(__name__)
 
