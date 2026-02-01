@@ -3,7 +3,7 @@ from snakemake.io import expand, directory, touch, multiext
 
 rule all:
     input:
-        expand("results/final/{sample}.done", sample=config["samples"]),
+        expand("results/final/{sample}_{te_name}.done", sample=config["samples"], te_name=config["te_name"]),
 
 
 rule build_database:
@@ -48,11 +48,11 @@ rule collect_te:
     input:
         families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
     output:
-        collection="results/collect_te/{sample}/{sample}_family.fa",
+        collection="results/collect_te/{sample}/{sample}_{te_name}_family.fa",
     log:
-        "results/logs/{sample}_collect_te.log",
+        "results/logs/{sample}_{te_name}_collect_te.log",
     params:
-        te_name=config.get("te_name", ""),
+        te_name=lambda wildcards: wildcards.te_name,
     conda:
         "envs/biopython.yaml"
     script:
@@ -62,11 +62,11 @@ rule collect_te:
 rule repeatmasker:
     input:
         fasta="data/{sample}.fasta.gz",
-        te_lib="results/collect_te/{sample}/{sample}_family.fa",
+        te_lib="results/collect_te/{sample}/{sample}_{te_name}_family.fa",
     output:
-        repeatmasker_dir=directory("results/repeatmasker/{sample}"),
+        repeatmasker_dir=directory("results/repeatmasker/{sample}_{te_name}"),
     log:
-        "results/logs/{sample}_repeatmasker.log",
+        "results/logs/{sample}_{te_name}_repeatmasker.log",
     params:
         engine=config.get("repeatmasker", {}).get("engine", "rmblast"),
         extra=config.get("repeatmasker", {}).get("extra", ""),
@@ -88,12 +88,12 @@ rule repeatmasker:
 
 rule plot_repeat_landscape:
     input:
-        repeatmasker_dir="results/repeatmasker/{sample}",
+        repeatmasker_dir="results/repeatmasker/{sample}_{te_name}",
         genome="data/{sample}.fasta.gz",
     output:
-        plot="results/plots/{sample}_repeat_landscape.png",
+        plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
     log:
-        "results/logs/{sample}_plot_repeat_landscape.log",
+        "results/logs/{sample}_{te_name}_plot_repeat_landscape.log",
     conda:
         "envs/matplotlib.yaml"
     script:
@@ -102,8 +102,8 @@ rule plot_repeat_landscape:
 
 rule final:
     input:
-        plot="results/plots/{sample}_repeat_landscape.png",
+        plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
     output:
-        touch("results/final/{sample}.done"),
+        touch("results/final/{sample}_{te_name}.done"),
     shell:
         "echo 'Done'"
