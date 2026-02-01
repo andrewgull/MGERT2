@@ -3,7 +3,7 @@ from snakemake.io import expand, directory, touch, multiext
 
 rule all:
     input:
-        expand("results/final/{sample}.done", sample=config["samples"]),
+        expand("results/final/{sample}_{te_name}.done", sample=config["samples"], te_name=config["te_name"]),
 
 
 rule build_database:
@@ -52,7 +52,7 @@ rule collect_te:
     log:
         "results/logs/{sample}_{te_name}_collect_te.log",
     params:
-        te_name=config.get("te_name", "Unknown"),
+        te_name=lambda wildcards: wildcards.te_name,
     conda:
         "envs/biopython.yaml"
     script:
