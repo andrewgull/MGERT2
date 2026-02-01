@@ -21,10 +21,10 @@ jobs:
     steps:
       # Step 3.1: Checkout the repository code
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run Snakemake dry run
-        uses: snakemake/snakemake-github-action@v1
+        uses: snakemake/snakemake-github-action@v2
         with:
           directory: tests/integration
           snakefile: workflow/Snakefile
