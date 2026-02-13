@@ -116,7 +116,6 @@ rule plot_repeat_landscape:
 rule make_te_bed:
     input:
         repeatmasker_dir="results/repeatmasker/{sample}_{te_name}",
-        genome="data/{sample}.fasta.gz",
     output:
         bed="results/extracted_te/{sample}/{sample}_{te_name}.bed",
     log:
