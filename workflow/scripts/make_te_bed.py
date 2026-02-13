@@ -97,6 +97,9 @@ def convert_to_bed(df: pd.DataFrame) -> pd.DataFrame:
     bed_df["name"] = "repeat_" + df["id"].astype(str)
     bed_df["score"] = df["sw_score"]
     bed_df["strand"] = df["strand"].replace({"C": "-", "+": "+"})
+    unexpected_strands = bed_df["strand"][~bed_df["strand"].isin(["+", "-"])]
+    if not unexpected_strands.empty:
+        logger.warning(f"Found {len(unexpected_strands)} rows with unexpected strand values")
 
     return bed_df
 
@@ -142,9 +145,10 @@ def find_out_file(path, sample=None):
         elif len(files) > 1:
             # Prefer {sample}.fasta.out if multiple exist and sample is known
             if sample:
-                 matching = [f for f in files if f.startswith(sample)]
-                 if matching:
-                     return os.path.join(path, matching[0])
+                matching = [f for f in files if f.startswith(sample)]
+                if matching:
+                    return os.path.join(path, matching[0])
+            logger.warning(f"Multiple .out files found in {path}, selecting the first one: {files[0]}")
             return os.path.join(path, files[0])
         
     raise FileNotFoundError(f"Could not find RepeatMasker .out file at {path}")
@@ -219,7 +223,7 @@ if __name__ == "__main__":
         )
         parser.add_argument(
             "--sample",
-            help="Optional sample name to help find the .out file if a directory is providing",
+            help="Optional sample name to help find the .out file if a directory is provided",
         )
         parser.add_argument(
             "--log-file",
