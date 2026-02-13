@@ -3,7 +3,11 @@ from snakemake.io import expand, directory, touch, multiext
 
 rule all:
     input:
-        expand("results/final/{sample}_{te_name}.done", sample=config["samples"], te_name=config["te_name"]),
+        expand(
+            "results/final/{sample}_{te_name}.done",
+            sample=config["samples"],
+            te_name=config["te_name"],
+        ),
 
 
 rule build_database:
@@ -13,7 +17,16 @@ rule build_database:
     input:
         genome="data/{sample}.fasta.gz",
     output:
-        multiext("results/rmod_database/{sample}/{sample}_rmod", ".nhr", ".nin", ".njs", ".nnd", ".nni", ".nog", ".nsq"),
+        multiext(
+            "results/rmod_database/{sample}/{sample}_rmod",
+            ".nhr",
+            ".nin",
+            ".njs",
+            ".nnd",
+            ".nni",
+            ".nog",
+            ".nsq",
+        ),
         translation="results/rmod_database/{sample}/{sample}_rmod.translation",
     log:
         "results/logs/{sample}_build_database.log",
@@ -100,9 +113,51 @@ rule plot_repeat_landscape:
         "scripts/repeat_landscape.py"
 
 
+rule make_te_bed:
+    input:
+        repeatmasker_dir="results/repeatmasker/{sample}_{te_name}",
+        genome="data/{sample}.fasta.gz",
+    output:
+        bed="results/extracted_te/{sample}/{sample}_{te_name}.bed",
+    log:
+        "results/logs/{sample}_{te_name}_extract_te.log",
+    params:
+        te_name=lambda wildcards: wildcards.te_name,
+    conda:
+        "envs/matplotlib.yaml"
+    script:
+        "scripts/make_te_bed.py"
+
+
+rule decompress_genome:
+    input:
+        "data/{sample}.fasta.gz",
+    output:
+        temp("results/genome/{sample}.fasta"),
+    shell:
+        "zcat {input} > {output}"
+
+
+rule extract_te_fasta:
+    input:
+        bed="results/extracted_te/{sample}/{sample}_{te_name}.bed",
+        genome="results/genome/{sample}.fasta",
+    output:
+        fasta="results/extracted_te/{sample}/{sample}_{te_name}.fa",
+    log:
+        "results/logs/{sample}_{te_name}_extract_te.log",
+    params:
+        te_name=lambda wildcards: wildcards.te_name,
+    conda:
+        "envs/bedtools.yaml"
+    shell:
+        "bedtools getfasta -fi {input.genome} -bed {input.bed} -fo {output.fasta} -s >> {log} 2>&1"
+
+
 rule final:
     input:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
+        extracted_te="results/extracted_te/{sample}/{sample}_{te_name}.fa",
     output:
         touch("results/final/{sample}_{te_name}.done"),
     shell:
