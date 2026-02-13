@@ -11,7 +11,14 @@ for d in [project_root, scripts_dir]:
     if d not in sys.path:
         sys.path.insert(0, d)
 
-from workflow.scripts.make_te_bed import parse_repeatmasker_out, filter_by_te_name, convert_to_bed, write_bed, main
+from workflow.scripts.make_te_bed import (
+    parse_repeatmasker_out,
+    filter_by_te_name,
+    convert_to_bed,
+    write_bed,
+    find_out_file,
+    main,
+)
 
 
 @pytest.fixture
@@ -35,7 +42,7 @@ def test_parse_repeatmasker_out(mock_repeatmasker_content):
     mock_file = StringIO(mock_repeatmasker_content)
     df = parse_repeatmasker_out(mock_file)
     
-    # Verify number of columns (15 as per the list in extract_te.py)
+    # Verify number of columns (15 as per the list in make_te_bed.py)
     assert len(df.columns) == 15
     
     # Verify number of rows (should skip 3 header lines)
@@ -122,3 +129,58 @@ def test_main_functionality(tmp_path, mock_repeatmasker_content):
     
     lines = output_bed.read_text().splitlines()
     assert len(lines) == 2 # Penelope occurs twice in the mock data
+
+
+def test_find_out_file_multiple(tmp_path):
+    """
+    Test find_out_file when multiple .out files are present.
+    """
+    rm_dir = tmp_path / "rm_outputs"
+    rm_dir.mkdir()
+    
+    # Create multiple .out files
+    file1 = rm_dir / "sample_A.fasta.out"
+    file2 = rm_dir / "sample_B.fasta.out"
+    file1.write_text("dummy A")
+    file2.write_text("dummy B")
+    
+    # 1. No sample provided, should pick the first one (alphabetical usually)
+    # The order of os.listdir can vary, but find_out_file takes files[0]
+    result = find_out_file(str(rm_dir))
+    assert result.endswith(".out")
+    
+    # 2. Sample provided, should pick the matching one
+    result_a = find_out_file(str(rm_dir), sample="sample_A")
+    assert os.path.basename(result_a) == "sample_A.fasta.out"
+    
+    result_b = find_out_file(str(rm_dir), sample="sample_B")
+    assert os.path.basename(result_b) == "sample_B.fasta.out"
+    
+    # 3. Sample provided but no exact match for sample.fasta.out, 
+    # but starts with sample
+    file3 = rm_dir / "sample_C.out"
+    file3.write_text("dummy C")
+    result_c = find_out_file(str(rm_dir), sample="sample_C")
+    assert os.path.basename(result_c) == "sample_C.out"
+
+
+def test_convert_to_bed_unexpected_strand(caplog):
+    """
+    Test convert_to_bed when unexpected strand values are present.
+    It should log a warning.
+    """
+    data = {
+        "query": ["seq1"],
+        "q_start": [100],
+        "q_end": [200],
+        "id": [1],
+        "sw_score": [1000],
+        "strand": ["?"],  # Unexpected strand
+    }
+    df = pd.DataFrame(data)
+    
+    with caplog.at_level("WARNING"):
+        bed_df = convert_to_bed(df)
+        
+    assert "Found 1 rows with unexpected strand values" in caplog.text
+    assert bed_df.iloc[0]["strand"] == "?"
