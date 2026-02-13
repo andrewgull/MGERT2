@@ -120,7 +120,7 @@ rule make_te_bed:
     output:
         bed="results/extracted_te/{sample}/{sample}_{te_name}.bed",
     log:
-        "results/logs/{sample}_{te_name}_extract_te.log",
+        "results/logs/{sample}_{te_name}_make_te_bed.log",
     params:
         te_name=lambda wildcards: wildcards.te_name,
     conda:
@@ -145,14 +145,11 @@ rule extract_te_fasta:
     output:
         fasta="results/extracted_te/{sample}/{sample}_{te_name}.fa",
     log:
-        "results/logs/{sample}_{te_name}_extract_te.log",
-    params:
-        te_name=lambda wildcards: wildcards.te_name,
+        "results/logs/{sample}_{te_name}_extract_te_fasta.log",
     conda:
         "envs/bedtools.yaml"
     shell:
-        "bedtools getfasta -fi {input.genome} -bed {input.bed} -fo {output.fasta} -s >> {log} 2>&1"
-
+        "bedtools getfasta -fi {input.genome} -bed {input.bed} -fo {output.fasta} -s > {log} 2>&1"
 
 rule final:
     input:
