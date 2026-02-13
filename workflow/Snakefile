@@ -151,6 +151,7 @@ rule extract_te_fasta:
     shell:
         "bedtools getfasta -fi {input.genome} -bed {input.bed} -fo {output.fasta} -s > {log} 2>&1"
 
+
 rule final:
     input:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",

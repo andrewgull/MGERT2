@@ -68,9 +68,7 @@ def filter_by_te_name(df: pd.DataFrame, te_name: str) -> pd.DataFrame:
         Filtered DataFrame.
     """
     filtered = df[df["class_family"].str.contains(te_name, na=False, case=False)]
-    logger.info(
-        f"Found {len(filtered)} hits for '{te_name}' out of {len(df)} total hits."
-    )
+    logger.info(f"Found {len(filtered)} hits for '{te_name}' out of {len(df)} total hits.")
     return filtered
 
 
@@ -130,14 +128,14 @@ def find_out_file(path, sample=None):
     """
     if os.path.isfile(path):
         return path
-    
+
     if os.path.isdir(path):
         # If sample is provided, look for sample.fasta.out
         if sample:
             potential_file = os.path.join(path, f"{sample}.fasta.out")
             if os.path.exists(potential_file):
                 return potential_file
-        
+
         # Otherwise, look for any .out file
         files = [f for f in os.listdir(path) if f.endswith(".out")]
         if len(files) == 1:
@@ -150,7 +148,7 @@ def find_out_file(path, sample=None):
                     return os.path.join(path, matching[0])
             logger.warning(f"Multiple .out files found in {path}, selecting the first one: {files[0]}")
             return os.path.join(path, files[0])
-        
+
     raise FileNotFoundError(f"Could not find RepeatMasker .out file at {path}")
 
 
@@ -172,10 +170,10 @@ def main(
         sample: Optional sample name to help find the .out file.
     """
     setup_logging(log_file, __name__)
-    
+
     # Resolve the .out file path if a directory was provided
     repeatmasker_out = find_out_file(repeatmasker_input, sample)
-    
+
     logger.info(f"Extracting {te_name} sequences from {repeatmasker_out}")
 
     # Parse and filter
@@ -203,9 +201,7 @@ if __name__ == "__main__":
     except NameError:
         import argparse
 
-        parser = argparse.ArgumentParser(
-            description="Convert RepeatMasker .out hits to BED format, filtered by TE name"
-        )
+        parser = argparse.ArgumentParser(description="Convert RepeatMasker .out hits to BED format, filtered by TE name")
         parser.add_argument(
             "--repeatmasker-out",
             required=True,
