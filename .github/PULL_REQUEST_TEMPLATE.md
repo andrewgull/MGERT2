@@ -7,7 +7,7 @@
 - [ ] Generate a new DAG-graph if you have added a new rule
 - [ ] Update the `requirements.md`
 - [ ] Update the `Issues` tab
-- [ ] Refer to the Issue number in the PR title
+- [ ] Refer to the Issue number in the PR description.
 <BR>
 
 ### Use commit tag:
