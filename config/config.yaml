@@ -7,3 +7,31 @@ te_name: "Penelope"
 repeatmasker:
   engine: "rmblast"
   extra: " -s -nocut"
+
+orf_analysis:
+  min_orf_aa: 100
+  start_codons:
+    - "ATG"
+  stop_codons:
+    - "TAA"
+    - "TAG"
+    - "TGA"
+  max_orfs_per_te: 3
+  require_stop_codon: true
+
+  intrinsic:
+    high_threshold: 0.70
+    medium_threshold: 0.45
+
+  rpsblast:
+    db: ""
+    evalue: 1e-5
+    max_target_seqs: 10
+    min_query_coverage: 0.35
+    min_bitscore: 50
+
+  classification:
+    high_min_aa: 300
+    high_min_intrinsic: 0.60
+    putative_min_aa: 150
+    putative_min_intrinsic: 0.50
