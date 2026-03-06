@@ -200,12 +200,8 @@ rule coding_potential_intrinsic:
     log:
         "results/logs/{sample}_{te_name}_coding_potential_intrinsic.log",
     params:
-        high_threshold=config.get("orf_analysis", {})
-        .get("intrinsic", {})
-        .get("high_threshold", 0.70),
-        medium_threshold=config.get("orf_analysis", {})
-        .get("intrinsic", {})
-        .get("medium_threshold", 0.45),
+        high_threshold=config.get("orf_analysis", {}).get("intrinsic", {}).get("high_threshold", 0.70),
+        medium_threshold=config.get("orf_analysis", {}).get("intrinsic", {}).get("medium_threshold", 0.45),
     conda:
         "envs/orf.yaml"
     script:
@@ -225,9 +221,7 @@ rule rpsblast_domains:
         db=config.get("orf_analysis", {}).get("rpsblast", {}).get("db", ""),
         evalue=config.get("orf_analysis", {}).get("rpsblast", {}).get("evalue", 1e-5),
         max_target_seqs=config.get("orf_analysis", {}).get("rpsblast", {}).get("max_target_seqs", 10),
-        min_query_coverage=config.get("orf_analysis", {})
-        .get("rpsblast", {})
-        .get("min_query_coverage", 0.35),
+        min_query_coverage=config.get("orf_analysis", {}).get("rpsblast", {}).get("min_query_coverage", 0.35),
         min_bitscore=config.get("orf_analysis", {}).get("rpsblast", {}).get("min_bitscore", 50),
     conda:
         "envs/rpsblast.yaml"
@@ -246,15 +240,9 @@ rule classify_orf_confidence:
         "results/logs/{sample}_{te_name}_classify_orf_confidence.log",
     params:
         high_min_aa=config.get("orf_analysis", {}).get("classification", {}).get("high_min_aa", 300),
-        high_min_intrinsic=config.get("orf_analysis", {})
-        .get("classification", {})
-        .get("high_min_intrinsic", 0.60),
-        putative_min_aa=config.get("orf_analysis", {})
-        .get("classification", {})
-        .get("putative_min_aa", 150),
-        putative_min_intrinsic=config.get("orf_analysis", {})
-        .get("classification", {})
-        .get("putative_min_intrinsic", 0.50),
+        high_min_intrinsic=config.get("orf_analysis", {}).get("classification", {}).get("high_min_intrinsic", 0.60),
+        putative_min_aa=config.get("orf_analysis", {}).get("classification", {}).get("putative_min_aa", 150),
+        putative_min_intrinsic=config.get("orf_analysis", {}).get("classification", {}).get("putative_min_intrinsic", 0.50),
     conda:
         "envs/orf.yaml"
     script:
