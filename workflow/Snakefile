@@ -1,5 +1,10 @@
 from snakemake.io import expand, directory, touch, multiext
 
+# Collect PSSM files that will be compiled into the RPS-BLAST database.
+# Set rpsblast.pssm_dir in config to point to a different directory of *.smp files.
+_PSSM_DIR = config.get("orf_analysis", {}).get("rpsblast", {}).get("pssm_dir", "data/pfam")
+_SMP_NAMES, = glob_wildcards(f"{_PSSM_DIR}/{{name}}.smp")
+
 
 rule all:
     input:
@@ -207,9 +212,35 @@ rule coding_potential_intrinsic:
         "scripts/coding_potential_intrinsic.py"
 
 
+rule build_rps_database:
+    """
+    Compile PSSM files (*.smp) from data/pfam/ into an RPS-BLAST database
+    using makeprofiledb (part of BLAST+).  The resulting database is reused
+    for every sample; it is rebuilt automatically whenever the .smp files change.
+    """
+    input:
+        smp=expand("{pssm_dir}/{name}.smp", pssm_dir=_PSSM_DIR, name=_SMP_NAMES),
+        domains_csv="data/domains.csv",
+    output:
+        db="results/rpsdb/domains.rps",
+    log:
+        "results/logs/build_rps_database.log",
+    params:
+        db_prefix="results/rpsdb/domains",
+    conda:
+        "envs/rpsblast.yaml"
+    shell:
+        """
+        mkdir -p results/rpsdb
+        printf '%s\\n' {input.smp} > results/rpsdb/smp_list.txt
+        makeprofiledb -in results/rpsdb/smp_list.txt -out {params.db_prefix} -dbtype rps > {log} 2>&1
+        """
+
+
 rule rpsblast_domains:
     input:
         aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+        db="results/rpsdb/domains.rps",
     output:
         hits="results/orf/{sample}/{sample}_{te_name}_rpsblast_hits.tsv",
         summary="results/orf/{sample}/{sample}_{te_name}_rpsblast_summary.tsv",
@@ -217,7 +248,7 @@ rule rpsblast_domains:
         "results/logs/{sample}_{te_name}_rpsblast_domains.log",
     threads: 4
     params:
-        db=config.get("orf_analysis", {}).get("rpsblast", {}).get("db", ""),
+        db="results/rpsdb/domains",
         evalue=config.get("orf_analysis", {}).get("rpsblast", {}).get("evalue", 1e-5),
         max_target_seqs=config.get("orf_analysis", {}).get("rpsblast", {}).get("max_target_seqs", 10),
         min_query_coverage=config.get("orf_analysis", {}).get("rpsblast", {}).get("min_query_coverage", 0.35),

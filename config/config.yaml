@@ -23,7 +23,10 @@ orf_analysis:
     medium_threshold: 0.45
 
   rpsblast:
-    db: ""
+    # Directory containing *.smp PSSM files to compile into the RPS-BLAST database.
+    # All *.smp files found in this directory are included. Defaults to data/pfam.
+    pssm_dir: "data/pfam"
+    # db is built automatically from pssm_dir via the build_rps_database rule
     evalue: 1e-5
     max_target_seqs: 10
     min_query_coverage: 0.35
