@@ -33,6 +33,10 @@ def main(
 ):
     setup_logging(log_file, __name__)
 
+    Path(output_table).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_nt_fasta).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_aa_fasta).parent.mkdir(parents=True, exist_ok=True)
+
     df = pd.read_csv(input_table, sep="\t")
     if df.empty:
         df.to_csv(output_table, sep="\t", index=False)

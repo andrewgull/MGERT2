@@ -190,6 +190,36 @@ def test_main_empty_input(tmp_path):
     assert df.empty
 
 
+def test_main_creates_output_dirs(tmp_path):
+    """Parent directories for all outputs are created even when they don't exist."""
+    rows = [{"te_id": "te1", "orf_id": "te1|orf_1", "aa_len": 200, "has_stop": True}]
+    table = _make_table(tmp_path, rows)
+    nested = tmp_path / "a" / "b" / "c"
+    nt = nested / "nt.fa"
+    aa = nested / "aa.fa"
+    _write_fasta(tmp_path / "nt_in.fa", ["te1|orf_1"])
+    _write_fasta(tmp_path / "aa_in.fa", ["te1|orf_1"])
+    out_table = str(nested / "out.tsv")
+
+    main(str(table), str(tmp_path / "nt_in.fa"), str(tmp_path / "aa_in.fa"),
+         out_table, str(nt), str(aa), min_orf_aa=100, max_orfs_per_te=5)
+
+    assert (nested / "out.tsv").exists()
+
+
+def test_main_creates_output_dirs_on_empty_input(tmp_path):
+    """mkdir is called even in the early-return (empty input) branch."""
+    table = tmp_path / "in.tsv"
+    pd.DataFrame(columns=["te_id", "orf_id", "aa_len", "has_stop"]).to_csv(str(table), sep="\t", index=False)
+    nested = tmp_path / "x" / "y"
+
+    main(str(table), str(tmp_path / "nt.fa"), str(tmp_path / "aa.fa"),
+         str(nested / "out.tsv"), str(nested / "nt_out.fa"), str(nested / "aa_out.fa"),
+         min_orf_aa=100, max_orfs_per_te=3)
+
+    assert (nested / "out.tsv").exists()
+
+
 def test_main_fasta_outputs_match_filtered(tmp_path):
     rows = [
         {"te_id": "te1", "orf_id": "te1|orf_1", "aa_len": 200, "has_stop": True},
