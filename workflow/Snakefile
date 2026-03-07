@@ -162,8 +162,7 @@ rule call_orfs:
         "results/logs/{sample}_{te_name}_call_orfs.log",
     params:
         min_orf_aa=config.get("orf_analysis", {}).get("min_orf_aa", 100),
-        start_codons=config.get("orf_analysis", {}).get("start_codons", ["ATG"]),
-        stop_codons=config.get("orf_analysis", {}).get("stop_codons", ["TAA", "TAG", "TGA"]),
+        require_start_codon=config.get("orf_analysis", {}).get("require_start_codon", True),
     conda:
         "envs/orf.yaml"
     script:
@@ -268,8 +267,11 @@ rule final:
     input:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
         extracted_te="results/extracted_te/{sample}/{sample}_{te_name}.fa",
-        orf_summary="results/reports/{sample}_{te_name}_orf_summary.tsv",
-        orf_summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
+        table="results/orf/{sample}/{sample}_{te_name}_orfs_raw.tsv",
+        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_nt.fa",
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_aa.fa",
+        #orf_summary="results/reports/{sample}_{te_name}_orf_summary.tsv",
+        #orf_summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
     output:
         touch("results/final/{sample}_{te_name}.done"),
     shell:
