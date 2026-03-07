@@ -17,7 +17,8 @@ def main(raw_orfs_tsv, classified_tsv, summary_tsv, summary_html, log_file=None)
     total_filtered_orfs = len(cls_df)
     te_with_raw_orfs = raw_df["te_id"].nunique() if "te_id" in raw_df.columns else 0
     te_with_filtered_orfs = cls_df["te_id"].nunique() if "te_id" in cls_df.columns else 0
-    longest_orf_aa = int(cls_df["aa_len"].max()) if not cls_df.empty else 0
+    max_val = cls_df["aa_len"].dropna().max() if "aa_len" in cls_df.columns else float("nan")
+    longest_orf_aa = int(max_val) if pd.notna(max_val) else 0
 
     class_counts = (
         cls_df["confidence_class"].value_counts(dropna=False).rename_axis("metric").reset_index(name="value")

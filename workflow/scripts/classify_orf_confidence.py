@@ -38,6 +38,8 @@ def main(
 
     merged = orf_df.merge(intrinsic_df, on="orf_id", how="left").merge(domain_df, on="orf_id", how="left")
     merged["domain_support"] = merged["domain_support"].fillna(False)
+    merged["intrinsic_score"] = merged["intrinsic_score"].fillna(0.0) if "intrinsic_score" in merged.columns else 0.0
+    merged["aa_len"] = merged["aa_len"].fillna(0.0) if "aa_len" in merged.columns else 0.0
     merged["confidence_class"] = merged.apply(
         classify_row,
         axis=1,

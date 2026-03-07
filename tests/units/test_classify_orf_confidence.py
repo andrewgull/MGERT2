@@ -142,6 +142,22 @@ def test_main_fills_missing_columns(tmp_path):
     assert "hit_count" in df.columns
 
 
+def test_main_na_intrinsic_score_does_not_raise(tmp_path):
+    """ORFs missing intrinsic scores (NA after left join) are classified as unlikely."""
+    orfs = pd.DataFrame({"te_id": ["te1"], "orf_id": ["te1|orf_1"], "aa_len": [400]})
+    intrinsic = pd.DataFrame(columns=["orf_id", "intrinsic_score", "intrinsic_label"])
+    domain = pd.DataFrame({"orf_id": ["te1|orf_1"], "domain_support": [False], "hit_count": [0],
+                           "best_domain": [""], "best_evalue": [float("nan")], "best_bitscore": [float("nan")]})
+    _write_tsv(tmp_path / "orfs.tsv", orfs)
+    _write_tsv(tmp_path / "intrinsic.tsv", intrinsic)
+    _write_tsv(tmp_path / "domain.tsv", domain)
+    out = str(tmp_path / "classified.tsv")
+    main(str(tmp_path / "orfs.tsv"), str(tmp_path / "intrinsic.tsv"), str(tmp_path / "domain.tsv"),
+         out, **THRESHOLDS)
+    df = pd.read_csv(out, sep="\t")
+    assert df.iloc[0]["confidence_class"] == "unlikely_coding"
+
+
 def test_main_creates_output_dir(tmp_path, inputs):
     out = str(tmp_path / "nested" / "dir" / "classified.tsv")
     main(str(inputs / "orfs.tsv"), str(inputs / "intrinsic.tsv"), str(inputs / "domain.tsv"),

@@ -102,6 +102,22 @@ def test_main_creates_output_dir(tmp_path, report_inputs):
     assert os.path.exists(out_tsv)
 
 
+def test_main_all_nan_aa_len(tmp_path):
+    """longest_orf_aa is 0 when aa_len column contains only NaNs."""
+    raw = pd.DataFrame({"te_id": ["te1"], "orf_id": ["te1|orf_1"], "aa_len": [200]})
+    classified = pd.DataFrame({"te_id": ["te1"], "orf_id": ["te1|orf_1"], "aa_len": [float("nan")]})
+    _write_tsv(tmp_path / "raw.tsv", raw)
+    _write_tsv(tmp_path / "classified.tsv", classified)
+    out_tsv = str(tmp_path / "summary.tsv")
+    out_html = str(tmp_path / "summary.html")
+
+    main(str(tmp_path / "raw.tsv"), str(tmp_path / "classified.tsv"), out_tsv, out_html)
+
+    df = pd.read_csv(out_tsv, sep="\t")
+    metrics = dict(zip(df["metric"], df["value"]))
+    assert int(metrics["longest_orf_aa"]) == 0
+
+
 def test_main_creates_separate_html_dir(tmp_path, report_inputs):
     """HTML parent dir is created even when it differs from the TSV parent dir."""
     out_tsv = str(tmp_path / "tsv_dir" / "summary.tsv")
