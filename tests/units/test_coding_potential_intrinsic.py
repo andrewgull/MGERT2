@@ -144,17 +144,13 @@ def test_main_length_score_capped_at_one(tmp_path):
     assert df.iloc[0]["length_score"] == pytest.approx(1.0)
 
 
-def test_main_missing_fasta_id_gives_zero_scores(tmp_path):
+def test_main_missing_fasta_id_raises(tmp_path):
     rows = [{"orf_id": "te1|orf_1", "aa_len": 150}]
-    seqs = {}  # orf_id not in fasta
+    seqs = {}  # orf_id absent from FASTA
     table, fasta = _make_inputs(tmp_path, rows, seqs)
-    out = str(tmp_path / "scores.tsv")
 
-    main(table, fasta, out, high_threshold=0.7, medium_threshold=0.45)
-
-    df = pd.read_csv(out, sep="\t")
-    assert df.iloc[0]["gc_content"] == 0.0
-    assert df.iloc[0]["codon_diversity"] == 0.0
+    with pytest.raises(ValueError, match="missing from FASTA"):
+        main(table, fasta, str(tmp_path / "scores.tsv"), high_threshold=0.7, medium_threshold=0.45)
 
 
 def test_main_empty_table(tmp_path):

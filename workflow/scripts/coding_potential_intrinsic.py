@@ -45,10 +45,14 @@ def main(
     df = pd.read_csv(input_table, sep="\t")
     seqs = {rec.id: str(rec.seq).upper() for rec in SeqIO.parse(input_nt_fasta, "fasta")}
 
+    missing = set(df["orf_id"]) - set(seqs)
+    if missing:
+        raise ValueError(f"ORF IDs present in table but missing from FASTA: {sorted(missing)}")
+
     rows = []
     for _, row in df.iterrows():
         orf_id = row["orf_id"]
-        nt = seqs.get(orf_id, "")
+        nt = seqs[orf_id]
         aa_len = float(row.get("aa_len", 0))
 
         length_score = min(aa_len / 300.0, 1.0)
