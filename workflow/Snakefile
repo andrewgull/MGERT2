@@ -3,7 +3,7 @@ from snakemake.io import expand, directory, touch, multiext
 # Collect PSSM files that will be compiled into the RPS-BLAST database.
 # Set rpsblast.pssm_dir in config to point to a different directory of *.smp files.
 _PSSM_DIR = config.get("orf_analysis", {}).get("rpsblast", {}).get("pssm_dir", "data/pfam")
-_SMP_NAMES, = glob_wildcards(f"{_PSSM_DIR}/{{name}}.smp")
+(_SMP_NAMES,) = glob_wildcards(f"{_PSSM_DIR}/{{name}}.smp")
 
 
 rule all:

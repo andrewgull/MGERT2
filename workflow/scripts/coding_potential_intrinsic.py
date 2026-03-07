@@ -17,7 +17,7 @@ def gc_content(seq):
 
 
 def codon_diversity(seq):
-    codons = [seq[i:i + 3] for i in range(0, len(seq) - 2, 3)]
+    codons = [seq[i : i + 3] for i in range(0, len(seq) - 2, 3)]
     codons = [c for c in codons if len(c) == 3]
     if not codons:
         return 0.0
