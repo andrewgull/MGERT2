@@ -12,76 +12,61 @@ from utils import setup_logging
 logger = logging.getLogger(__name__)
 
 
-RANGE_PATTERNS = [
-    re.compile(r"(?P<seqid>\S+):(?P<start>\d+)-(?P<end>\d+)"),
-    re.compile(r"\[(?P<start>\d+)\s*-\s*(?P<end>\d+)\]"),
-]
-FRAME_PATTERN = re.compile(r"frame(?:=|\s)(?P<frame>-?\d+)", re.IGNORECASE)
+RANGE_PATTERN = re.compile(r"\[(?P<start>\d+)\s*-\s*(?P<end>\d+)\]")
+REVERSE_PATTERN = re.compile(r"REVERSE SENSE", re.IGNORECASE)
 
 
-def parse_orffinder_header(record: SeqRecord):
-    """Extract ORF metadata from an ORFfinder FASTA record header.
+def parse_getorf_header(record: SeqRecord):
+    """Extract ORF metadata from a getorf (EMBOSS) FASTA record header.
 
-    The parser pulls sequence id, start/end coordinates, reading frame, and
-    strand from ORFfinder's description string using permissive regex patterns.
+    getorf appends ``_N`` (ORF number) to the sequence id and places coordinates
+    as ``[start - end]`` followed by ``(REVERSE SENSE)`` for minus-strand ORFs.
     Missing fields are returned as ``None``.
     """
     header = record.description
     token = header.split()[0]
-    seqid = token.split(":")[0]
+    # getorf appends _N to the original seqid; strip it to recover the TE id
+    seqid = re.sub(r"_\d+$", "", token)
     start = None
     end = None
-    frame = None
 
-    for pat in RANGE_PATTERNS:
-        m = pat.search(header)
-        if m:
-            start = int(m.group("start"))
-            end = int(m.group("end"))
-            seqid = m.groupdict().get("seqid", seqid)
-            break
+    m = RANGE_PATTERN.search(header)
+    if m:
+        start = int(m.group("start"))
+        end = int(m.group("end"))
 
-    fm = FRAME_PATTERN.search(header)
-    if fm:
-        frame = int(fm.group("frame"))
-
-    strand = "+"
-    if frame is not None and frame < 0:
-        strand = "-"
+    strand = "-" if REVERSE_PATTERN.search(header) else "+"
 
     return {
         "te_id": seqid,
         "start": start,
         "end": end,
-        "frame": frame,
+        "frame": None,
         "strand": strand,
     }
 
 
-def run_orffinder(input_fasta, out_path, outfmt, min_orf_aa):
-    """Run NCBI ORFfinder on an input FASTA with minimum ORF length in aa.
+def run_getorf(input_fasta, out_path, find, min_orf_nt):
+    """Run EMBOSS getorf on an input FASTA.
 
     Args:
         input_fasta: Path to nucleotide FASTA to scan.
-        out_path: Path where ORFfinder writes its output.
-        outfmt: ORFfinder output format integer (1=nt FASTA, 2=aa FASTA).
-        min_orf_aa: Minimum ORF size in amino acids.
+        out_path: Path where getorf writes its output.
+        find: getorf ``-find`` mode (1=protein ORFs, 3=nucleotide ORFs).
+        min_orf_nt: Minimum ORF size in nucleotides.
     """
-    min_orf_nt = int(min_orf_aa) * 3
     cmd = [
-        "ORFfinder",
-        "-in",
+        "getorf",
+        "-sequence",
         input_fasta,
-        "-out",
+        "-outseq",
         out_path,
-        "-outfmt",
-        str(outfmt),
-        "-ml",
+        "-minsize",
         str(min_orf_nt),
-        "-strand",
-        "both",
+        "-find",
+        str(find),
     ]
-    logger.info("Running ORFfinder: %s", " ".join(cmd))
+    logger.info("Running getorf: %s", " ".join(cmd))
     subprocess.run(cmd, check=True)
 
 
@@ -101,31 +86,32 @@ def main(
     stop_codons,
     log_file=None,
 ):
-    """Call ORFs with ORFfinder and export table + nucleotide/protein FASTAs.
+    """Call ORFs with getorf (EMBOSS) and export table + nucleotide/protein FASTAs.
 
-    The function runs ORFfinder twice (nt and aa outputs), pairs records by
+    The function runs getorf twice (nt and aa outputs), pairs records by
     index, normalizes ORF ids, captures basic metadata for downstream workflow
     steps, and writes Snakemake outputs.
     """
     setup_logging(log_file, __name__)
     if start_codons != ["ATG"] or sorted(stop_codons) != ["TAA", "TAG", "TGA"]:
         logger.warning(
-            "Configured start/stop codons are not directly applied by this ORFfinder wrapper. "
-            "Using ORFfinder defaults for start/stop handling."
+            "Configured start/stop codons are not directly applied by this getorf wrapper. "
+            "Using getorf defaults for start/stop handling."
         )
 
-    with tempfile.TemporaryDirectory(prefix="orffinder_") as tmpdir:
+    min_orf_nt = int(min_orf_aa) * 3
+    with tempfile.TemporaryDirectory(prefix="getorf_") as tmpdir:
         nt_tmp = str(Path(tmpdir) / "orfs_nt.fa")
         aa_tmp = str(Path(tmpdir) / "orfs_aa.fa")
-        run_orffinder(input_fasta, nt_tmp, outfmt=1, min_orf_aa=min_orf_aa)
-        run_orffinder(input_fasta, aa_tmp, outfmt=2, min_orf_aa=min_orf_aa)
+        run_getorf(input_fasta, nt_tmp, find=3, min_orf_nt=min_orf_nt)
+        run_getorf(input_fasta, aa_tmp, find=1, min_orf_nt=min_orf_nt)
 
         nt_records_raw = list(SeqIO.parse(nt_tmp, "fasta"))
         aa_records_raw = list(SeqIO.parse(aa_tmp, "fasta"))
 
     if len(nt_records_raw) != len(aa_records_raw):
         logger.warning(
-            "ORFfinder nucleotide/protein ORF count mismatch (%d vs %d). Pairing by minimum count.",
+            "getorf nucleotide/protein ORF count mismatch (%d vs %d). Pairing by minimum count.",
             len(nt_records_raw),
             len(aa_records_raw),
         )
@@ -137,7 +123,7 @@ def main(
     for idx in range(n):
         nt_rec = nt_records_raw[idx]
         aa_rec = aa_records_raw[idx]
-        parsed = parse_orffinder_header(nt_rec)
+        parsed = parse_getorf_header(nt_rec)
         orf_id = f"{parsed['te_id']}|orf_{idx+1}"
         rows.append(
             {

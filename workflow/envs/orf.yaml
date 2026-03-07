@@ -4,6 +4,6 @@ channels:
   - defaults
 dependencies:
   - python=3.11
-  - biopython
-  - pandas
-  - orffinder
+  - biopython=1.86
+  - pandas=3.0.1
+  - emboss=6.6.0
