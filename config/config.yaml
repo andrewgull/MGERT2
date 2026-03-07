@@ -1,6 +1,5 @@
 samples:
   - "sample1"
-  - "sample2"
 
 te_name: "Penelope"
 
@@ -10,12 +9,12 @@ repeatmasker:
 
 orf_analysis:
   min_orf_aa: 100
-  start_codons:
-    - "ATG"
-  stop_codons:
-    - "TAA"
-    - "TAG"
-    - "TGA"
+  # require_start_codon: if true, only report ORFs that begin with a canonical
+  # start codon (ATG); getorf -find 1/3 (protein/nucleotide, start→stop).
+  # Set to false to include truncated ORFs that may start at any sense codon;
+  # getorf -find 0/2 (protein/nucleotide, stop→stop). Use false when you
+  # expect 5'-incomplete TEs in your assembly.
+  require_start_codon: true
   max_orfs_per_te: 3
   require_stop_codon: true
 

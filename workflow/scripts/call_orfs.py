@@ -52,7 +52,17 @@ def run_getorf(input_fasta, out_path, find, min_orf_nt):
     Args:
         input_fasta: Path to nucleotide FASTA to scan.
         out_path: Path where getorf writes its output.
-        find: getorf ``-find`` mode (1=protein ORFs, 3=nucleotide ORFs).
+        find: getorf ``-find`` mode controlling which ORFs are reported:
+
+            * ``0`` — protein translation of regions between stop codons.
+              No start codon required; captures truncated (5'-incomplete) ORFs.
+            * ``1`` — protein translation of canonical ORFs (start → stop).
+              Requires a standard start codon (ATG).
+            * ``2`` — nucleotide sequence of regions between stop codons.
+              No start codon required; paired with ``find=0``.
+            * ``3`` — nucleotide sequence of canonical ORFs (start → stop).
+              Requires a standard start codon (ATG); paired with ``find=1``.
+
         min_orf_nt: Minimum ORF size in nucleotides.
     """
     cmd = [
@@ -82,8 +92,7 @@ def main(
     output_nt_fasta,
     output_aa_fasta,
     min_orf_aa,
-    start_codons,
-    stop_codons,
+    require_start_codon=True,
     log_file=None,
 ):
     """Call ORFs with getorf (EMBOSS) and export table + nucleotide/protein FASTAs.
@@ -91,20 +100,27 @@ def main(
     The function runs getorf twice (nt and aa outputs), pairs records by
     index, normalizes ORF ids, captures basic metadata for downstream workflow
     steps, and writes Snakemake outputs.
+
+    Args:
+        require_start_codon: If ``True``, only canonical ORFs starting with ATG
+            are reported (getorf ``-find 1/3``).  If ``False``, any region
+            between two stop codons is reported, capturing 5'-truncated ORFs
+            (getorf ``-find 0/2``).
     """
     setup_logging(log_file, __name__)
-    if start_codons != ["ATG"] or sorted(stop_codons) != ["TAA", "TAG", "TGA"]:
-        logger.warning(
-            "Configured start/stop codons are not directly applied by this getorf wrapper. "
-            "Using getorf defaults for start/stop handling."
-        )
+    if require_start_codon:
+        find_nt, find_aa = 3, 1
+        logger.info("ORF mode: canonical (start→stop, ATG required)")
+    else:
+        find_nt, find_aa = 2, 0
+        logger.info("ORF mode: permissive (stop→stop, any sense codon allowed)")
 
     min_orf_nt = int(min_orf_aa) * 3
     with tempfile.TemporaryDirectory(prefix="getorf_") as tmpdir:
         nt_tmp = str(Path(tmpdir) / "orfs_nt.fa")
         aa_tmp = str(Path(tmpdir) / "orfs_aa.fa")
-        run_getorf(input_fasta, nt_tmp, find=3, min_orf_nt=min_orf_nt)
-        run_getorf(input_fasta, aa_tmp, find=1, min_orf_nt=min_orf_nt)
+        run_getorf(input_fasta, nt_tmp, find=find_nt, min_orf_nt=min_orf_nt)
+        run_getorf(input_fasta, aa_tmp, find=find_aa, min_orf_nt=min_orf_nt)
 
         nt_records_raw = list(SeqIO.parse(nt_tmp, "fasta"))
         aa_records_raw = list(SeqIO.parse(aa_tmp, "fasta"))
@@ -135,7 +151,7 @@ def main(
                 "frame": parsed["frame"],
                 "nt_len": len(nt_rec.seq),
                 "aa_len": len(aa_rec.seq),
-                "has_start": True,
+                "has_start": require_start_codon,
                 "has_stop": True,
             }
         )
@@ -177,8 +193,7 @@ if __name__ == "__main__":
             snakemake.output.nt_fasta,
             snakemake.output.aa_fasta,
             snakemake.params.min_orf_aa,
-            snakemake.params.start_codons,
-            snakemake.params.stop_codons,
+            snakemake.params.require_start_codon,
             snakemake.log[0] if snakemake.log else None,
         )
     except NameError:
@@ -190,8 +205,13 @@ if __name__ == "__main__":
         parser.add_argument("--output-nt-fasta", required=True)
         parser.add_argument("--output-aa-fasta", required=True)
         parser.add_argument("--min-orf-aa", type=int, default=100)
-        parser.add_argument("--start-codons", nargs="+", default=["ATG"])
-        parser.add_argument("--stop-codons", nargs="+", default=["TAA", "TAG", "TGA"])
+        parser.add_argument(
+            "--require-start-codon",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help="Require ATG start codon (default). Use --no-require-start-codon "
+            "to include truncated ORFs starting at any sense codon.",
+        )
         parser.add_argument("--log-file")
         args = parser.parse_args()
         main(
@@ -200,7 +220,6 @@ if __name__ == "__main__":
             args.output_nt_fasta,
             args.output_aa_fasta,
             args.min_orf_aa,
-            args.start_codons,
-            args.stop_codons,
+            args.require_start_codon,
             args.log_file,
         )
