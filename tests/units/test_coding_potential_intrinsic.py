@@ -153,6 +153,22 @@ def test_main_missing_fasta_id_raises(tmp_path):
         main(table, fasta, str(tmp_path / "scores.tsv"), high_threshold=0.7, medium_threshold=0.45)
 
 
+def test_main_invalid_threshold_out_of_range(tmp_path):
+    rows = [{"orf_id": "te1|orf_1", "aa_len": 150}]
+    seqs = {"te1|orf_1": "ATGCCC"}
+    table, fasta = _make_inputs(tmp_path, rows, seqs)
+    with pytest.raises(ValueError, match="Thresholds must be in"):
+        main(table, fasta, str(tmp_path / "scores.tsv"), high_threshold=1.5, medium_threshold=0.45)
+
+
+def test_main_invalid_threshold_medium_gt_high(tmp_path):
+    rows = [{"orf_id": "te1|orf_1", "aa_len": 150}]
+    seqs = {"te1|orf_1": "ATGCCC"}
+    table, fasta = _make_inputs(tmp_path, rows, seqs)
+    with pytest.raises(ValueError, match="medium_threshold"):
+        main(table, fasta, str(tmp_path / "scores.tsv"), high_threshold=0.4, medium_threshold=0.7)
+
+
 def test_main_empty_table(tmp_path):
     # write a table with column headers but no rows
     table = str(tmp_path / "orfs.tsv")

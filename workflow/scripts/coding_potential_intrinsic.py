@@ -42,6 +42,11 @@ def main(
 ):
     setup_logging(log_file, __name__)
 
+    if not (0.0 <= medium_threshold <= 1.0 and 0.0 <= high_threshold <= 1.0):
+        raise ValueError(f"Thresholds must be in [0, 1]: high={high_threshold}, medium={medium_threshold}")
+    if medium_threshold > high_threshold:
+        raise ValueError(f"medium_threshold ({medium_threshold}) must be <= high_threshold ({high_threshold})")
+
     df = pd.read_csv(input_table, sep="\t")
     seqs = {rec.id: str(rec.seq).upper() for rec in SeqIO.parse(input_nt_fasta, "fasta")}
 
