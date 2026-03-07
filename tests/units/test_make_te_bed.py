@@ -164,6 +164,40 @@ def test_find_out_file_multiple(tmp_path):
     assert os.path.basename(result_c) == "sample_C.out"
 
 
+def test_find_out_file_single(tmp_path):
+    rm_dir = tmp_path / "rm"
+    rm_dir.mkdir()
+    (rm_dir / "sample.fasta.out").write_text("dummy")
+    result = find_out_file(str(rm_dir))
+    assert result.endswith("sample.fasta.out")
+
+
+def test_find_out_file_not_found(tmp_path):
+    rm_dir = tmp_path / "rm"
+    rm_dir.mkdir()
+    with pytest.raises(FileNotFoundError):
+        find_out_file(str(rm_dir))
+
+
+def test_parse_repeatmasker_out_bad_line(tmp_path, mock_repeatmasker_content, caplog):
+    # A line with 16 tokens (one too many for the 15-column schema) triggers on_bad_line
+    bad_line = "   19   12.4  0.0  2.8  NW_017385987.1     1405    1441 (4175035) + (TAT)n           Simple_repeat       1     36    (0)    1    EXTRA\n"
+    bad_file = tmp_path / "bad.out"
+    bad_file.write_text(mock_repeatmasker_content + bad_line)
+    with caplog.at_level("WARNING"):
+        df = parse_repeatmasker_out(str(bad_file))
+    assert "Skipping bad line" in caplog.text
+
+
+def test_main_no_hits_logs_warning(tmp_path, mock_repeatmasker_content, caplog):
+    out_file = tmp_path / "sample.fasta.out"
+    out_file.write_text(mock_repeatmasker_content)
+    bed_out = tmp_path / "out.bed"
+    with caplog.at_level("WARNING"):
+        main(str(out_file), str(bed_out), "NONEXISTENT_TE", None)
+    assert "No hits found" in caplog.text
+
+
 def test_convert_to_bed_unexpected_strand(caplog):
     """
     Test convert_to_bed when unexpected strand values are present.
