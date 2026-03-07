@@ -1,0 +1,8 @@
+[coverage:report]
+exclude_lines =
+    # standard pragma
+    pragma: no cover
+    # __main__ / CLI entry-point blocks never run under pytest
+    if __name__ == .__main__.:
+    # snakemake/argparse fallback detection used in every script
+    except NameError:
