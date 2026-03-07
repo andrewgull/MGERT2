@@ -297,12 +297,8 @@ rule orf_report:
 rule final:
     input:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
-        extracted_te="results/extracted_te/{sample}/{sample}_{te_name}.fa",
-        table="results/orf/{sample}/{sample}_{te_name}_orfs_raw.tsv",
-        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_nt.fa",
-        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_aa.fa",
-        #orf_summary="results/reports/{sample}_{te_name}_orf_summary.tsv",
-        #orf_summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
+        summary_tsv="results/reports/{sample}_{te_name}_orf_summary.tsv",
+        summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
     output:
         touch("results/final/{sample}_{te_name}.done"),
     shell:
