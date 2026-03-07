@@ -220,19 +220,19 @@ rule build_rps_database:
     """
     input:
         smp=expand("{pssm_dir}/{name}.smp", pssm_dir=_PSSM_DIR, name=_SMP_NAMES),
-        domains_csv="data/domains.csv",
     output:
         db="results/rpsdb/domains.rps",
     log:
         "results/logs/build_rps_database.log",
     params:
         db_prefix="results/rpsdb/domains",
+        pssm_dir=_PSSM_DIR,
     conda:
         "envs/rpsblast.yaml"
     shell:
         """
         mkdir -p results/rpsdb
-        printf '%s\\n' {input.smp} > results/rpsdb/smp_list.txt
+        for f in {params.pssm_dir}/*.smp; do printf '%s\\n' "$f"; done > results/rpsdb/smp_list.txt
         makeprofiledb -in results/rpsdb/smp_list.txt -out {params.db_prefix} -dbtype rps > {log} 2>&1
         """
 
