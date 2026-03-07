@@ -100,9 +100,7 @@ def main(
         return
 
     hits = pd.read_csv(raw_out, sep="\t", names=RPS_COLS)
-    hits["qcov"] = hits.apply(
-        lambda r: float(r["length"]) / max(qlen.get(r["qseqid"], 1), 1), axis=1
-    )
+    hits["qcov"] = hits.apply(lambda r: float(r["length"]) / max(qlen.get(r["qseqid"], 1), 1), axis=1)
     hits = hits[
         (hits["evalue"] <= float(evalue))
         & (hits["qcov"] >= float(min_query_coverage))
@@ -115,9 +113,7 @@ def main(
         return
 
     best = (
-        hits.sort_values(
-            ["qseqid", "bitscore", "evalue"], ascending=[True, False, True]
-        )
+        hits.sort_values(["qseqid", "bitscore", "evalue"], ascending=[True, False, True])
         .groupby("qseqid", as_index=False)
         .first()
     )
@@ -140,9 +136,7 @@ def main(
     summary["best_domain"] = summary["best_domain"].fillna("")
     summary.to_csv(summary_out, sep="\t", index=False)
 
-    logger.info(
-        "Wrote %d filtered hits and %d ORF domain summaries", len(hits), len(summary)
-    )
+    logger.info("Wrote %d filtered hits and %d ORF domain summaries", len(hits), len(summary))
 
 
 if __name__ == "__main__":

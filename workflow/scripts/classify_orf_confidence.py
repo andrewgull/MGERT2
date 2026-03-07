@@ -7,18 +7,14 @@ from utils import setup_logging
 logger = logging.getLogger(__name__)
 
 
-def classify_row(
-    r, high_min_aa, high_min_intrinsic, putative_min_aa, putative_min_intrinsic
-):
+def classify_row(r, high_min_aa, high_min_intrinsic, putative_min_aa, putative_min_intrinsic):
     aa_len = float(r.get("aa_len", 0))
     intrinsic = float(r.get("intrinsic_score", 0))
     domain_support = bool(r.get("domain_support", False))
 
     if aa_len >= high_min_aa and intrinsic >= high_min_intrinsic and domain_support:
         return "high_confidence_coding"
-    if aa_len >= putative_min_aa and (
-        intrinsic >= putative_min_intrinsic or domain_support
-    ):
+    if aa_len >= putative_min_aa and (intrinsic >= putative_min_intrinsic or domain_support):
         return "putative_coding"
     return "unlikely_coding"
 
@@ -40,9 +36,7 @@ def main(
     intrinsic_df = pd.read_csv(intrinsic_scores, sep="\t")
     domain_df = pd.read_csv(domain_summary, sep="\t")
 
-    merged = orf_df.merge(intrinsic_df, on="orf_id", how="left").merge(
-        domain_df, on="orf_id", how="left"
-    )
+    merged = orf_df.merge(intrinsic_df, on="orf_id", how="left").merge(domain_df, on="orf_id", how="left")
     merged["domain_support"] = merged["domain_support"].fillna(False)
     merged["confidence_class"] = merged.apply(
         classify_row,

@@ -75,9 +75,7 @@ if __name__ == "__main__":
     except NameError:
         import argparse
 
-        parser = argparse.ArgumentParser(
-            description="Filter ORFs by length and completeness"
-        )
+        parser = argparse.ArgumentParser(description="Filter ORFs by length and completeness")
         parser.add_argument("--input-table", required=True)
         parser.add_argument("--input-nt-fasta", required=True)
         parser.add_argument("--input-aa-fasta", required=True)

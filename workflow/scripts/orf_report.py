@@ -16,16 +16,11 @@ def main(raw_orfs_tsv, classified_tsv, summary_tsv, summary_html, log_file=None)
     total_raw_orfs = len(raw_df)
     total_filtered_orfs = len(cls_df)
     te_with_raw_orfs = raw_df["te_id"].nunique() if "te_id" in raw_df.columns else 0
-    te_with_filtered_orfs = (
-        cls_df["te_id"].nunique() if "te_id" in cls_df.columns else 0
-    )
+    te_with_filtered_orfs = cls_df["te_id"].nunique() if "te_id" in cls_df.columns else 0
     longest_orf_aa = int(cls_df["aa_len"].max()) if not cls_df.empty else 0
 
     class_counts = (
-        cls_df["confidence_class"]
-        .value_counts(dropna=False)
-        .rename_axis("metric")
-        .reset_index(name="value")
+        cls_df["confidence_class"].value_counts(dropna=False).rename_axis("metric").reset_index(name="value")
         if "confidence_class" in cls_df.columns
         else pd.DataFrame(columns=["metric", "value"])
     )
@@ -44,11 +39,7 @@ def main(raw_orfs_tsv, classified_tsv, summary_tsv, summary_html, log_file=None)
     Path(summary_tsv).parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(summary_tsv, sep="\t", index=False)
 
-    top_orfs = (
-        cls_df.sort_values("aa_len", ascending=False).head(25)
-        if "aa_len" in cls_df.columns
-        else cls_df
-    )
+    top_orfs = cls_df.sort_values("aa_len", ascending=False).head(25) if "aa_len" in cls_df.columns else cls_df
     html = ["<html><body>", "<h1>ORF Coding Potential Report</h1>"]
     html.append("<h2>Summary Metrics</h2>")
     html.append(out.to_html(index=False))
@@ -72,9 +63,7 @@ if __name__ == "__main__":
     except NameError:
         import argparse
 
-        parser = argparse.ArgumentParser(
-            description="Create ORF coding potential report"
-        )
+        parser = argparse.ArgumentParser(description="Create ORF coding potential report")
         parser.add_argument("--raw-orfs", required=True)
         parser.add_argument("--classified", required=True)
         parser.add_argument("--summary-tsv", required=True)

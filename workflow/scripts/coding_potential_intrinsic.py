@@ -43,9 +43,7 @@ def main(
     setup_logging(log_file, __name__)
 
     df = pd.read_csv(input_table, sep="\t")
-    seqs = {
-        rec.id: str(rec.seq).upper() for rec in SeqIO.parse(input_nt_fasta, "fasta")
-    }
+    seqs = {rec.id: str(rec.seq).upper() for rec in SeqIO.parse(input_nt_fasta, "fasta")}
 
     rows = []
     for _, row in df.iterrows():
@@ -67,9 +65,7 @@ def main(
                 "codon_diversity": round(cd, 4),
                 "length_score": round(length_score, 4),
                 "intrinsic_score": round(score, 4),
-                "intrinsic_label": intrinsic_label(
-                    score, high_threshold, medium_threshold
-                ),
+                "intrinsic_label": intrinsic_label(score, high_threshold, medium_threshold),
             }
         )
 
@@ -103,9 +99,7 @@ if __name__ == "__main__":
     except NameError:
         import argparse
 
-        parser = argparse.ArgumentParser(
-            description="Compute intrinsic coding potential scores"
-        )
+        parser = argparse.ArgumentParser(description="Compute intrinsic coding potential scores")
         parser.add_argument("--input-table", required=True)
         parser.add_argument("--input-nt-fasta", required=True)
         parser.add_argument("--output-tsv", required=True)
