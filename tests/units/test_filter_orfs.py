@@ -132,6 +132,19 @@ def test_main_require_stop_codon_filters(tmp_path):
     assert list(df["orf_id"]) == ["te1|orf_1"]
 
 
+def test_main_require_stop_codon_missing_column_raises(tmp_path):
+    """require_stop_codon=True must raise when has_stop column is absent."""
+    rows = [{"te_id": "te1", "orf_id": "te1|orf_1", "aa_len": 200}]  # no has_stop column
+    table = _make_table(tmp_path, rows)
+    _write_fasta(tmp_path / "nt.fa", ["te1|orf_1"])
+    _write_fasta(tmp_path / "aa.fa", ["te1|orf_1"])
+
+    with pytest.raises(ValueError, match="has_stop"):
+        main(str(table), str(tmp_path / "nt.fa"), str(tmp_path / "aa.fa"),
+             str(tmp_path / "out.tsv"), str(tmp_path / "nt_out.fa"), str(tmp_path / "aa_out.fa"),
+             min_orf_aa=100, max_orfs_per_te=5, require_stop_codon=True)
+
+
 def test_main_no_require_stop_codon_keeps_all(tmp_path):
     rows = [
         {"te_id": "te1", "orf_id": "te1|orf_1", "aa_len": 200, "has_stop": False},

@@ -46,7 +46,9 @@ def main(
         return
 
     filtered = df[df["aa_len"] >= int(min_orf_aa)].copy()
-    if require_stop_codon and "has_stop" in filtered.columns:
+    if require_stop_codon:
+        if "has_stop" not in filtered.columns:
+            raise ValueError("require_stop_codon=True but 'has_stop' column is missing from the ORF table")
         filtered = filtered[filtered["has_stop"] == True]  # noqa: E712
 
     filtered = filtered.sort_values(["te_id", "aa_len"], ascending=[True, False])
