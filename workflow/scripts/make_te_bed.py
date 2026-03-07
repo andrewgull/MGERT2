@@ -191,7 +191,7 @@ def main(
 
 
 if __name__ == "__main__":
-    try:
+    if "snakemake" in globals():
         main(
             snakemake.input.repeatmasker_dir,
             snakemake.output.bed,
@@ -199,7 +199,7 @@ if __name__ == "__main__":
             snakemake.log[0] if snakemake.log else None,
             sample=snakemake.wildcards.sample,
         )
-    except NameError:
+    else:
         import argparse
 
         parser = argparse.ArgumentParser(description="Convert RepeatMasker .out hits to BED format, filtered by TE name")

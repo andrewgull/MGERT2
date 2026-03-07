@@ -52,7 +52,7 @@ def main(raw_orfs_tsv, classified_tsv, summary_tsv, summary_html, log_file=None)
 
 
 if __name__ == "__main__":
-    try:
+    if "snakemake" in globals():
         main(
             snakemake.input.raw_orfs,
             snakemake.input.classified,
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             snakemake.output.summary_html,
             snakemake.log[0] if snakemake.log else None,
         )
-    except NameError:
+    else:
         import argparse
 
         parser = argparse.ArgumentParser(description="Create ORF coding potential report")

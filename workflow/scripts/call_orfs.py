@@ -186,7 +186,7 @@ def main(
 
 
 if __name__ == "__main__":
-    try:
+    if "snakemake" in globals():
         main(
             snakemake.input.fasta,
             snakemake.output.table,
@@ -196,7 +196,7 @@ if __name__ == "__main__":
             snakemake.params.require_start_codon,
             snakemake.log[0] if snakemake.log else None,
         )
-    except NameError:
+    else:
         import argparse
 
         parser = argparse.ArgumentParser(description="Call ORFs from TE fasta")

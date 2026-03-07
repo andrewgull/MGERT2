@@ -59,14 +59,14 @@ def run_repeatmodeler_logic(database, threads, output_file, log_file: str):
 
 
 if __name__ == "__main__":
-    try:
+    if "snakemake" in globals():
         run_repeatmodeler_logic(
             database=snakemake.params.db_basename,
             threads=snakemake.threads,
             output_file=snakemake.output.families,
             log_file=snakemake.log[0],
         )
-    except NameError:
+    else:
         import argparse
 
         parser = argparse.ArgumentParser(description="Run RepeatModeler")

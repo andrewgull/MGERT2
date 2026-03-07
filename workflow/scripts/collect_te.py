@@ -36,14 +36,14 @@ def main(input_fasta, output_fasta, te_name, log_file=None):
 
 
 if __name__ == "__main__":
-    try:
+    if "snakemake" in globals():
         main(
             snakemake.input.families,
             snakemake.output.collection,
             snakemake.params.te_name,
             snakemake.log[0] if snakemake.log else None,
         )
-    except NameError:
+    else:
         import argparse
 
         parser = argparse.ArgumentParser(description="Collect TE sequences from a FASTA file")

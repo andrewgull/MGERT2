@@ -140,7 +140,7 @@ def main(
 
 
 if __name__ == "__main__":
-    try:
+    if "snakemake" in globals():
         main(
             snakemake.input.aa_fasta,
             snakemake.output.hits,
@@ -153,7 +153,7 @@ if __name__ == "__main__":
             snakemake.threads,
             snakemake.log[0] if snakemake.log else None,
         )
-    except NameError:
+    else:
         import argparse
 
         parser = argparse.ArgumentParser(description="Run RPS-BLAST on ORFs")

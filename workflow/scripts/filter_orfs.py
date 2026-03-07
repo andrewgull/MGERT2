@@ -68,7 +68,7 @@ def main(
 
 
 if __name__ == "__main__":
-    try:
+    if "snakemake" in globals():
         main(
             snakemake.input.table,
             snakemake.input.nt_fasta,
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             snakemake.params.require_stop_codon,
             snakemake.log[0] if snakemake.log else None,
         )
-    except NameError:
+    else:
         import argparse
 
         parser = argparse.ArgumentParser(description="Filter ORFs by length and completeness")

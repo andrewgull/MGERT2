@@ -67,7 +67,7 @@ def main(
 
 
 if __name__ == "__main__":
-    try:
+    if "snakemake" in globals():
         main(
             snakemake.input.filtered_orfs,
             snakemake.input.intrinsic_scores,
@@ -79,7 +79,7 @@ if __name__ == "__main__":
             snakemake.params.putative_min_intrinsic,
             snakemake.log[0] if snakemake.log else None,
         )
-    except NameError:
+    else:
         import argparse
 
         parser = argparse.ArgumentParser(description="Classify ORF coding confidence")
