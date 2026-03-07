@@ -14,7 +14,10 @@ def load_fasta_dict(path):
 
 
 def write_subset_fasta(records, keep_ids, output_path):
-    keep = [records[k] for k in keep_ids if k in records]
+    missing_ids = [id for id in keep_ids if id not in records]
+    if missing_ids:
+        raise ValueError(f"ORF IDs in filtered table but missing from FASTA: {sorted(missing_ids)}")
+    keep = [records[k] for k in keep_ids]
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     SeqIO.write(keep, output_path, "fasta")
 

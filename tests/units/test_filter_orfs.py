@@ -71,12 +71,11 @@ def test_write_subset_fasta(tmp_path, fasta_file):
     assert written[0].id == "te1|orf_1"
 
 
-def test_write_subset_fasta_missing_id_skipped(tmp_path, fasta_file):
+def test_write_subset_fasta_missing_id_raises(tmp_path, fasta_file):
     records = load_fasta_dict(str(fasta_file))
     out = str(tmp_path / "out.fa")
-    write_subset_fasta(records, {"te1|orf_1", "nonexistent"}, out)
-    written = list(SeqIO.parse(out, "fasta"))
-    assert len(written) == 1
+    with pytest.raises(ValueError, match="nonexistent"):
+        write_subset_fasta(records, {"te1|orf_1", "nonexistent"}, out)
 
 
 # ---------------------------------------------------------------------------
