@@ -88,7 +88,7 @@ if __name__ == "__main__":
         parser.add_argument("--output-aa-fasta", required=True)
         parser.add_argument("--min-orf-aa", type=int, default=100)
         parser.add_argument("--max-orfs-per-te", type=int, default=3)
-        parser.add_argument("--require-stop-codon", action="store_true")
+        parser.add_argument("--require-stop-codon", action=argparse.BooleanOptionalAction, default=True)
         parser.add_argument("--log-file")
         args = parser.parse_args()
         main(
