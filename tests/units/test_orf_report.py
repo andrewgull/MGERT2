@@ -100,3 +100,11 @@ def test_main_creates_output_dir(tmp_path, report_inputs):
     out_html = str(tmp_path / "nested" / "summary.html")
     main(str(report_inputs / "raw.tsv"), str(report_inputs / "classified.tsv"), out_tsv, out_html)
     assert os.path.exists(out_tsv)
+
+
+def test_main_creates_separate_html_dir(tmp_path, report_inputs):
+    """HTML parent dir is created even when it differs from the TSV parent dir."""
+    out_tsv = str(tmp_path / "tsv_dir" / "summary.tsv")
+    out_html = str(tmp_path / "html_dir" / "summary.html")
+    main(str(report_inputs / "raw.tsv"), str(report_inputs / "classified.tsv"), out_tsv, out_html)
+    assert os.path.exists(out_html)

@@ -37,6 +37,7 @@ def main(raw_orfs_tsv, classified_tsv, summary_tsv, summary_html, log_file=None)
 
     out = pd.concat([core_metrics, class_counts], ignore_index=True)
     Path(summary_tsv).parent.mkdir(parents=True, exist_ok=True)
+    Path(summary_html).parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(summary_tsv, sep="\t", index=False)
 
     top_orfs = cls_df.sort_values("aa_len", ascending=False).head(25) if "aa_len" in cls_df.columns else cls_df
