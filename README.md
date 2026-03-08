@@ -15,55 +15,151 @@
 This is a rework of [MGERT](https://github.com/andrewgull/MGERT) -
 aka a big-ass 6-year-old Python script which was slain by "dependency hell".
 
-Check the Issues tab and [Project requirements](docs/requirements.md) to get started.
+---
 
-Remember that `dev` and `main` branches are protected - do not push changes to them.
-Create a new branch to contribute to the project.
+## User Guide
 
-Follow [this guide](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716)
-to write better commit messages.
+### What the pipeline does
 
-## What you need to install
+MGERT2 takes one or more genome assemblies and a target TE family name, then:
 
-To ensure we all use exactly the same dependencies to run the workflow,
-tests etc., we use [Pixi](https://pixi.sh/).
+1. Builds a repeat database and runs **RepeatModeler2** to find TE families.
+2. Collects consensus sequences matching the target TE name.
+3. Runs **RepeatMasker** to locate all copies in the genome.
+4. Extracts the genomic TE sequences as FASTA.
+5. Calls ORFs, scores coding potential, and searches for protein domains
+   via **RPS-BLAST**.
+6. Classifies each ORF by confidence and produces a summary report.
 
-Install it on your laptop using this [guide](https://pixi.prefix.dev/latest/installation/).
+### Installation
 
-## How to run
-
-Having done this, you'll be able to run all the commands listed below:
+Install [Pixi](https://pixi.prefix.dev/latest/installation/), then
+clone the repository and run:
 
 ```bash
-# format Snakefile
-# check for the visual style
-pixi run format-snakefile
+pixi install
+```
 
-# format Python scripts
-pixi run format-scripts
+This creates a fully reproducible environment with all tools and packages.
 
-# lint Snakefile:
-# check for logic and best practices
-pixi run lint
+### Input files
 
-# rulegraph (shows general workflow structure)
-# to images/
-pixi run rulegraph
+| Path | Description |
+| --- | --- |
+| `data/{sample}.fasta.gz` | Gzip-compressed genome assembly |
+| `data/pfam/*.smp` | PSSM files for the RPS-BLAST domain database |
+| `data/domains.csv` | TSV mapping each `.smp` file to a domain type |
 
-# run unit tests
-pixi run tests
+`data/domains.csv` is a two-column tab-separated file with no header:
 
-# snakemake dry run
+```text
+pfam00078.smp   RT
+cd00304.smp     EN
+```
+
+### Configuration
+
+Edit `config/config.yaml` before running.
+
+#### Required settings
+
+```yaml
+samples:
+  - "my_genome"   # basename of data/my_genome.fasta.gz
+
+te_name: "Penelope"  # TE family name to find in RepeatModeler output
+```
+
+#### RepeatMasker
+
+```yaml
+repeatmasker:
+  engine: "rmblast"    # or "crossmatch", "abblast"
+  extra: " -s -nocut"  # additional RepeatMasker flags
+```
+
+#### ORF analysis
+
+```yaml
+orf_analysis:
+  min_orf_aa: 100            # minimum ORF length (amino acids)
+  require_start_codon: true  # false = include 5'-truncated ORFs
+  max_orfs_per_te: 3         # keep at most N ORFs per TE copy
+  require_stop_codon: true
+```
+
+#### Domain filter
+
+Controls which ORFs and TEs are flagged as domain-supported.
+
+```yaml
+orf_analysis:
+  rpsblast:
+    pssm_dir: "data/pfam"          # directory of *.smp PSSM files
+    domains_csv: "data/domains.csv" # .smp → domain type mapping
+    evalue: 1e-5
+    min_query_coverage: 0.35
+    min_bitscore: 50
+
+  domain_filter:
+    # Domain types (from domains.csv) that must be present.
+    # Empty list = accept any domain hit.
+    required_domains: []
+    # How many of required_domains each ORF must match.
+    min_domain_types_per_orf: 1
+    # true = RT and EN may be in different ORFs of the same TE.
+    allow_split_across_orfs: false
+    # Which ORFs count toward TE-level coverage when split is on.
+    # "all" = every ORF; "passing" = only ORFs that pass per-ORF filter.
+    te_coverage_scope: "all"
+```
+
+Common scenarios:
+
+- **Any domain hit is enough** — leave `required_domains: []`
+- **Each ORF must have RT** — `required_domains: ["RT"]`
+- **TE needs RT and EN, possibly in separate ORFs** —
+  `required_domains: ["RT","EN"]`, `allow_split_across_orfs: true`
+- **Same, but count only ORFs that individually pass** —
+  add `te_coverage_scope: "passing"`
+
+The filter adds two columns to the classification output:
+
+- `passes_domain_filter` — per-ORF boolean
+- `te_domain_complete` — per-TE boolean
+
+#### Confidence classification
+
+```yaml
+orf_analysis:
+  classification:
+    high_min_aa: 300           # minimum length for high-confidence
+    high_min_intrinsic: 0.60   # minimum intrinsic score
+    putative_min_aa: 150
+    putative_min_intrinsic: 0.50
+```
+
+Each ORF is labelled `high_confidence_coding`, `putative_coding`, or
+`unlikely_coding`.
+
+### Running
+
+```bash
+# Validate configuration without running jobs
 pixi run dry-run
 
-# snakemake full run (4 cores)
+# Run the full pipeline (4 cores)
 pixi run full-run
 ```
 
-To get full list of available tasks, run:
+### Outputs
 
-```bash
-pixi task list
-```
+| Path | Contents |
+| --- | --- |
+| `results/plots/` | Kimura-distance repeat landscape plots |
+| `results/extracted_te/` | Extracted TE copy sequences (FASTA) |
+| `results/orf/*_orf_classification.tsv` | Per-ORF confidence and domain flags |
+| `results/reports/*_orf_summary.tsv` | Counts by confidence class |
+| `results/reports/*_orf_summary.html` | HTML version of the summary |
 
-Also, see [pixi.toml](pixi.toml) for more details.
+---
