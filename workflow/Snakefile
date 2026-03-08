@@ -232,7 +232,7 @@ rule build_rps_database:
     shell:
         """
         mkdir -p results/rpsdb
-        for f in {params.pssm_dir}/*.smp; do printf '%s\\n' "$f"; done > results/rpsdb/smp_list.txt
+        printf '%s\\n' {input.smp} > results/rpsdb/smp_list.txt
         makeprofiledb -in results/rpsdb/smp_list.txt -out {params.db_prefix} -dbtype rps > {log} 2>&1
         """
 
