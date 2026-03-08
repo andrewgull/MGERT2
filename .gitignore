@@ -25,6 +25,9 @@ RM_*/
 .snakemake/
 results/
 
+# reads
+data/*.fasta.gz
+
 # IDE files?
 .DS_Store
 

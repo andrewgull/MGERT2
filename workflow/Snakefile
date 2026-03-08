@@ -1,5 +1,10 @@
 from snakemake.io import expand, directory, touch, multiext
 
+# Collect PSSM files that will be compiled into the RPS-BLAST database.
+# Set rpsblast.pssm_dir in config to point to a different directory of *.smp files.
+_PSSM_DIR = config.get("orf_analysis", {}).get("rpsblast", {}).get("pssm_dir", "data/pfam")
+(_SMP_NAMES,) = glob_wildcards(f"{_PSSM_DIR}/{{name}}.smp")
+
 
 rule all:
     input:
@@ -151,10 +156,149 @@ rule extract_te_fasta:
         "bedtools getfasta -fi {input.genome} -bed {input.bed} -fo {output.fasta} -s > {log} 2>&1"
 
 
+rule call_orfs:
+    input:
+        fasta="results/extracted_te/{sample}/{sample}_{te_name}.fa",
+    output:
+        table="results/orf/{sample}/{sample}_{te_name}_orfs_raw.tsv",
+        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_nt.fa",
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_aa.fa",
+    log:
+        "results/logs/{sample}_{te_name}_call_orfs.log",
+    params:
+        min_orf_aa=config.get("orf_analysis", {}).get("min_orf_aa", 100),
+        require_start_codon=config.get("orf_analysis", {}).get("require_start_codon", True),
+    conda:
+        "envs/orf.yaml"
+    script:
+        "scripts/call_orfs.py"
+
+
+rule filter_orfs:
+    input:
+        table="results/orf/{sample}/{sample}_{te_name}_orfs_raw.tsv",
+        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_nt.fa",
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_aa.fa",
+    output:
+        table="results/orf/{sample}/{sample}_{te_name}_orfs_filtered.tsv",
+        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_nt.fa",
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+    log:
+        "results/logs/{sample}_{te_name}_filter_orfs.log",
+    params:
+        min_orf_aa=config.get("orf_analysis", {}).get("min_orf_aa", 100),
+        max_orfs_per_te=config.get("orf_analysis", {}).get("max_orfs_per_te", 3),
+        require_stop_codon=config.get("orf_analysis", {}).get("require_stop_codon", True),
+    conda:
+        "envs/orf.yaml"
+    script:
+        "scripts/filter_orfs.py"
+
+
+rule coding_potential_intrinsic:
+    input:
+        table="results/orf/{sample}/{sample}_{te_name}_orfs_filtered.tsv",
+        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_nt.fa",
+    output:
+        tsv="results/orf/{sample}/{sample}_{te_name}_intrinsic_scores.tsv",
+    log:
+        "results/logs/{sample}_{te_name}_coding_potential_intrinsic.log",
+    params:
+        high_threshold=config.get("orf_analysis", {}).get("intrinsic", {}).get("high_threshold", 0.70),
+        medium_threshold=config.get("orf_analysis", {}).get("intrinsic", {}).get("medium_threshold", 0.45),
+    conda:
+        "envs/orf.yaml"
+    script:
+        "scripts/coding_potential_intrinsic.py"
+
+
+rule build_rps_database:
+    """
+    Compile PSSM files (*.smp) from data/pfam/ into an RPS-BLAST database
+    using makeprofiledb (part of BLAST+).  The resulting database is reused
+    for every sample; it is rebuilt automatically whenever the .smp files change.
+    """
+    input:
+        smp=expand("{pssm_dir}/{name}.smp", pssm_dir=_PSSM_DIR, name=_SMP_NAMES),
+    output:
+        db="results/rpsdb/domains.rps",
+    log:
+        "results/logs/build_rps_database.log",
+    params:
+        db_prefix="results/rpsdb/domains",
+        pssm_dir=_PSSM_DIR,
+    conda:
+        "envs/rpsblast.yaml"
+    shell:
+        """
+        mkdir -p results/rpsdb
+        printf '%s\\n' {input.smp} > results/rpsdb/smp_list.txt
+        makeprofiledb -in results/rpsdb/smp_list.txt -out {params.db_prefix} -dbtype rps > {log} 2>&1
+        """
+
+
+rule rpsblast_domains:
+    input:
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+        db="results/rpsdb/domains.rps",
+    output:
+        hits="results/orf/{sample}/{sample}_{te_name}_rpsblast_hits.tsv",
+        summary="results/orf/{sample}/{sample}_{te_name}_rpsblast_summary.tsv",
+    log:
+        "results/logs/{sample}_{te_name}_rpsblast_domains.log",
+    threads: 4
+    params:
+        db="results/rpsdb/domains",
+        evalue=config.get("orf_analysis", {}).get("rpsblast", {}).get("evalue", 1e-5),
+        max_target_seqs=config.get("orf_analysis", {}).get("rpsblast", {}).get("max_target_seqs", 10),
+        min_query_coverage=config.get("orf_analysis", {}).get("rpsblast", {}).get("min_query_coverage", 0.35),
+        min_bitscore=config.get("orf_analysis", {}).get("rpsblast", {}).get("min_bitscore", 50),
+    conda:
+        "envs/rpsblast.yaml"
+    script:
+        "scripts/rpsblast_domains.py"
+
+
+rule classify_orf_confidence:
+    input:
+        filtered_orfs="results/orf/{sample}/{sample}_{te_name}_orfs_filtered.tsv",
+        intrinsic_scores="results/orf/{sample}/{sample}_{te_name}_intrinsic_scores.tsv",
+        domain_summary="results/orf/{sample}/{sample}_{te_name}_rpsblast_summary.tsv",
+    output:
+        tsv="results/orf/{sample}/{sample}_{te_name}_orf_classification.tsv",
+    log:
+        "results/logs/{sample}_{te_name}_classify_orf_confidence.log",
+    params:
+        high_min_aa=config.get("orf_analysis", {}).get("classification", {}).get("high_min_aa", 300),
+        high_min_intrinsic=config.get("orf_analysis", {}).get("classification", {}).get("high_min_intrinsic", 0.60),
+        putative_min_aa=config.get("orf_analysis", {}).get("classification", {}).get("putative_min_aa", 150),
+        putative_min_intrinsic=config.get("orf_analysis", {}).get("classification", {}).get("putative_min_intrinsic", 0.50),
+    conda:
+        "envs/orf.yaml"
+    script:
+        "scripts/classify_orf_confidence.py"
+
+
+rule orf_report:
+    input:
+        raw_orfs="results/orf/{sample}/{sample}_{te_name}_orfs_raw.tsv",
+        classified="results/orf/{sample}/{sample}_{te_name}_orf_classification.tsv",
+    output:
+        summary_tsv="results/reports/{sample}_{te_name}_orf_summary.tsv",
+        summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
+    log:
+        "results/logs/{sample}_{te_name}_orf_report.log",
+    conda:
+        "envs/pandas.yaml"
+    script:
+        "scripts/orf_report.py"
+
+
 rule final:
     input:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
-        extracted_te="results/extracted_te/{sample}/{sample}_{te_name}.fa",
+        summary_tsv="results/reports/{sample}_{te_name}_orf_summary.tsv",
+        summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
     output:
         touch("results/final/{sample}_{te_name}.done"),
     shell:

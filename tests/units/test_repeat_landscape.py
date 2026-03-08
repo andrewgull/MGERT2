@@ -145,6 +145,21 @@ def test_main_integration(tmp_path, mock_fasta, mock_rm_out):
     assert output_img.exists()
 
 
+def test_main_multiple_out_files_logs_warning(tmp_path, mock_fasta, mock_rm_out, caplog):
+    from workflow.scripts.repeat_landscape import main
+
+    # create a second .out file in the same dir so the "multiple" branch is hit
+    second = tmp_path / "other.out"
+    second.write_text(open(mock_rm_out).read())
+
+    output_img = tmp_path / "landscape.png"
+    with caplog.at_level("WARNING"):
+        main(mock_fasta, str(tmp_path), str(output_img))
+
+    assert "Multiple .out files found" in caplog.text
+    assert output_img.exists()
+
+
 def test_main_no_out_file(tmp_path, mock_fasta):
     from workflow.scripts.repeat_landscape import main
 

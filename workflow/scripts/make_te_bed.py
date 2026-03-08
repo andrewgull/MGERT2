@@ -68,12 +68,8 @@ def filter_by_te_name(df: pd.DataFrame, te_name: str) -> pd.DataFrame:
     Returns:
         Filtered DataFrame.
     """
-    filtered = df[
-        df["class_family"].str.contains(te_name, na=False, case=False, regex=False)
-    ]
-    logger.info(
-        f"Found {len(filtered)} hits for '{te_name}' out of {len(df)} total hits."
-    )
+    filtered = df[df["class_family"].str.contains(te_name, na=False, case=False, regex=False)]
+    logger.info(f"Found {len(filtered)} hits for '{te_name}' out of {len(df)} total hits.")
     return filtered
 
 
@@ -102,9 +98,7 @@ def convert_to_bed(df: pd.DataFrame) -> pd.DataFrame:
     bed_df["strand"] = df["strand"].replace({"C": "-", "+": "+"})
     unexpected_strands = bed_df["strand"][~bed_df["strand"].isin(["+", "-"])]
     if not unexpected_strands.empty:
-        logger.warning(
-            f"Found {len(unexpected_strands)} rows with unexpected strand values"
-        )
+        logger.warning(f"Found {len(unexpected_strands)} rows with unexpected strand values")
 
     return bed_df
 
@@ -153,9 +147,7 @@ def find_out_file(path, sample=None):
                 matching = [f for f in files if f.startswith(sample)]
                 if matching:
                     return os.path.join(path, matching[0])
-            logger.warning(
-                f"Multiple .out files found in {path}, selecting the first one: {files[0]}"
-            )
+            logger.warning(f"Multiple .out files found in {path}, selecting the first one: {files[0]}")
             return os.path.join(path, files[0])
 
     raise FileNotFoundError(f"Could not find RepeatMasker .out file at {path}")
@@ -199,7 +191,7 @@ def main(
 
 
 if __name__ == "__main__":
-    try:
+    if "snakemake" in globals():
         main(
             snakemake.input.repeatmasker_dir,
             snakemake.output.bed,
@@ -207,12 +199,10 @@ if __name__ == "__main__":
             snakemake.log[0] if snakemake.log else None,
             sample=snakemake.wildcards.sample,
         )
-    except NameError:
+    else:
         import argparse
 
-        parser = argparse.ArgumentParser(
-            description="Convert RepeatMasker .out hits to BED format, filtered by TE name"
-        )
+        parser = argparse.ArgumentParser(description="Convert RepeatMasker .out hits to BED format, filtered by TE name")
         parser.add_argument(
             "--repeatmasker-out",
             required=True,
