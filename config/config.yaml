@@ -26,11 +26,32 @@ orf_analysis:
     # Directory containing *.smp PSSM files to compile into the RPS-BLAST database.
     # All *.smp files found in this directory are included. Defaults to data/pfam.
     pssm_dir: "data/pfam"
+    # Two-column TSV (filename.smp <TAB> domain_type) that maps each .smp file to a
+    # human-readable domain class (e.g. RT, EN). Used to annotate hits and drive
+    # the domain_filter rules below.
+    domains_csv: "data/domains.csv"
     # db is built automatically from pssm_dir via the build_rps_database rule
     evalue: 1e-5
     max_target_seqs: 10
     min_query_coverage: 0.35
     min_bitscore: 50
+
+  # Domain-based ORF selection filter (applied in classify_orf_confidence).
+  domain_filter:
+    # Domain types (second column of domains_csv) that must be present.
+    # Empty list = no specific domain requirement; any hit gives domain_support.
+    required_domains: []
+    # Minimum number of distinct required_domains types an ORF must have to pass
+    # the per-ORF filter (passes_domain_filter). Ignored when required_domains is empty.
+    min_domain_types_per_orf: 1
+    # When false (default): each ORF must independently satisfy the per-ORF filter.
+    # When true: required_domains may be spread across different ORFs from the same TE;
+    # te_domain_complete is True when the TE's ORFs collectively cover all required_domains.
+    allow_split_across_orfs: false
+    # Controls which ORFs contribute to te_domain_complete when allow_split_across_orfs
+    # is true. "all" = union across every ORF; "passing" = only ORFs that pass
+    # the per-ORF filter.
+    te_coverage_scope: "all"
 
   classification:
     high_min_aa: 300

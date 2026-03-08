@@ -253,6 +253,7 @@ rule rpsblast_domains:
         max_target_seqs=config.get("orf_analysis", {}).get("rpsblast", {}).get("max_target_seqs", 10),
         min_query_coverage=config.get("orf_analysis", {}).get("rpsblast", {}).get("min_query_coverage", 0.35),
         min_bitscore=config.get("orf_analysis", {}).get("rpsblast", {}).get("min_bitscore", 50),
+        domains_csv=config.get("orf_analysis", {}).get("rpsblast", {}).get("domains_csv", "data/domains.csv"),
     conda:
         "envs/rpsblast.yaml"
     script:
@@ -273,6 +274,10 @@ rule classify_orf_confidence:
         high_min_intrinsic=config.get("orf_analysis", {}).get("classification", {}).get("high_min_intrinsic", 0.60),
         putative_min_aa=config.get("orf_analysis", {}).get("classification", {}).get("putative_min_aa", 150),
         putative_min_intrinsic=config.get("orf_analysis", {}).get("classification", {}).get("putative_min_intrinsic", 0.50),
+        required_domains=config.get("orf_analysis", {}).get("domain_filter", {}).get("required_domains", []),
+        min_domain_types_per_orf=config.get("orf_analysis", {}).get("domain_filter", {}).get("min_domain_types_per_orf", 1),
+        allow_split_across_orfs=config.get("orf_analysis", {}).get("domain_filter", {}).get("allow_split_across_orfs", False),
+        te_coverage_scope=config.get("orf_analysis", {}).get("domain_filter", {}).get("te_coverage_scope", "all"),
     conda:
         "envs/orf.yaml"
     script:
