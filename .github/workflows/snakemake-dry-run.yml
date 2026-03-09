@@ -1,0 +1,36 @@
+name: Snakemake Dry Run Check
+
+# 1. Define when this workflow should run
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+# 2. Define the jobs (what to do)
+jobs:
+  dry_run:
+    # Use a standard Ubuntu runner environment
+    runs-on: ubuntu-latest
+
+    # 3. Define the steps for the job
+    steps:
+      # Step 3.1: Checkout the repository code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Snakemake dry run
+        uses: snakemake/snakemake-github-action@v1
+        with:
+          directory: tests/integration
+          snakefile: workflow/Snakefile
+          args: >-
+            -n
+            --use-conda
+            --cores 1
+            --configfiles config/config.yaml tests/integration/config/config.yaml
+            --show-failed-logs

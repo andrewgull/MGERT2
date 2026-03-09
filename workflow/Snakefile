@@ -1,0 +1,310 @@
+from snakemake.io import expand, directory, touch, multiext
+
+# Collect PSSM files that will be compiled into the RPS-BLAST database.
+# Set rpsblast.pssm_dir in config to point to a different directory of *.smp files.
+_PSSM_DIR = config.get("orf_analysis", {}).get("rpsblast", {}).get("pssm_dir", "data/pfam")
+(_SMP_NAMES,) = glob_wildcards(f"{_PSSM_DIR}/{{name}}.smp")
+
+
+rule all:
+    input:
+        expand(
+            "results/final/{sample}_{te_name}.done",
+            sample=config["samples"],
+            te_name=config["te_name"],
+        ),
+
+
+rule build_database:
+    """
+    Build a database from the input genome assembly
+    """
+    input:
+        genome="data/{sample}.fasta.gz",
+    output:
+        multiext(
+            "results/rmod_database/{sample}/{sample}_rmod",
+            ".nhr",
+            ".nin",
+            ".njs",
+            ".nnd",
+            ".nni",
+            ".nog",
+            ".nsq",
+        ),
+        translation="results/rmod_database/{sample}/{sample}_rmod.translation",
+    log:
+        "results/logs/{sample}_build_database.log",
+    conda:
+        "envs/repeatmodeler.yaml"
+    params:
+        basename=lambda wildcards: f"results/rmod_database/{wildcards.sample}/{wildcards.sample}_rmod",
+    shell:
+        """BuildDatabase -name {params.basename} {input.genome} &> {log}"""
+
+
+rule repeatmodeler:
+    """
+    Run RepeatModeler2 using the database files from the previous rule
+    """
+    input:
+        nhr="results/rmod_database/{sample}/{sample}_rmod.nhr",
+    output:
+        families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
+    log:
+        "results/logs/{sample}_run_repeatmodeler2.log",
+    threads: 8
+    conda:
+        "envs/repeatmodeler.yaml"
+    params:
+        db_basename=lambda wildcards, input: input.nhr.replace(".nhr", ""),
+    script:
+        "scripts/run_repeatmodeler.py"
+
+
+rule collect_te:
+    input:
+        families="results/rmod_families/{sample}/{sample}_rmod-families.fa",
+    output:
+        collection="results/collect_te/{sample}/{sample}_{te_name}_family.fa",
+    log:
+        "results/logs/{sample}_{te_name}_collect_te.log",
+    params:
+        te_name=lambda wildcards: wildcards.te_name,
+    conda:
+        "envs/biopython.yaml"
+    script:
+        "scripts/collect_te.py"
+
+
+rule repeatmasker:
+    input:
+        fasta="data/{sample}.fasta.gz",
+        te_lib="results/collect_te/{sample}/{sample}_{te_name}_family.fa",
+    output:
+        repeatmasker_dir=directory("results/repeatmasker/{sample}_{te_name}"),
+    log:
+        "results/logs/{sample}_{te_name}_repeatmasker.log",
+    params:
+        engine=config.get("repeatmasker", {}).get("engine", "rmblast"),
+        extra=config.get("repeatmasker", {}).get("extra", ""),
+    threads: 8
+    conda:
+        "envs/repeatmasker.yaml"
+    shell:
+        """
+        RepeatMasker \
+            -pa {threads} \
+            -lib {input.te_lib} \
+            -dir {output.repeatmasker_dir} \
+            -gff \
+            -engine {params.engine} \
+            {params.extra} \
+            {input.fasta} > {log} 2>&1
+        """
+
+
+rule plot_repeat_landscape:
+    input:
+        repeatmasker_dir="results/repeatmasker/{sample}_{te_name}",
+        genome="data/{sample}.fasta.gz",
+    output:
+        plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
+    log:
+        "results/logs/{sample}_{te_name}_plot_repeat_landscape.log",
+    conda:
+        "envs/matplotlib.yaml"
+    script:
+        "scripts/repeat_landscape.py"
+
+
+rule make_te_bed:
+    input:
+        repeatmasker_dir="results/repeatmasker/{sample}_{te_name}",
+    output:
+        bed="results/extracted_te/{sample}/{sample}_{te_name}.bed",
+    log:
+        "results/logs/{sample}_{te_name}_make_te_bed.log",
+    params:
+        te_name=lambda wildcards: wildcards.te_name,
+    conda:
+        "envs/pandas.yaml"
+    script:
+        "scripts/make_te_bed.py"
+
+
+rule decompress_genome:
+    input:
+        "data/{sample}.fasta.gz",
+    output:
+        temp("results/genome/{sample}.fasta"),
+    shell:
+        "zcat {input} > {output}"
+
+
+rule extract_te_fasta:
+    input:
+        bed="results/extracted_te/{sample}/{sample}_{te_name}.bed",
+        genome="results/genome/{sample}.fasta",
+    output:
+        fasta="results/extracted_te/{sample}/{sample}_{te_name}.fa",
+    log:
+        "results/logs/{sample}_{te_name}_extract_te_fasta.log",
+    conda:
+        "envs/bedtools.yaml"
+    shell:
+        "bedtools getfasta -fi {input.genome} -bed {input.bed} -fo {output.fasta} -s > {log} 2>&1"
+
+
+rule call_orfs:
+    input:
+        fasta="results/extracted_te/{sample}/{sample}_{te_name}.fa",
+    output:
+        table="results/orf/{sample}/{sample}_{te_name}_orfs_raw.tsv",
+        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_nt.fa",
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_aa.fa",
+    log:
+        "results/logs/{sample}_{te_name}_call_orfs.log",
+    params:
+        min_orf_aa=config.get("orf_analysis", {}).get("min_orf_aa", 100),
+        require_start_codon=config.get("orf_analysis", {}).get("require_start_codon", True),
+    conda:
+        "envs/orf.yaml"
+    script:
+        "scripts/call_orfs.py"
+
+
+rule filter_orfs:
+    input:
+        table="results/orf/{sample}/{sample}_{te_name}_orfs_raw.tsv",
+        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_nt.fa",
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_raw_aa.fa",
+    output:
+        table="results/orf/{sample}/{sample}_{te_name}_orfs_filtered.tsv",
+        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_nt.fa",
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+    log:
+        "results/logs/{sample}_{te_name}_filter_orfs.log",
+    params:
+        min_orf_aa=config.get("orf_analysis", {}).get("min_orf_aa", 100),
+        max_orfs_per_te=config.get("orf_analysis", {}).get("max_orfs_per_te", 3),
+        require_stop_codon=config.get("orf_analysis", {}).get("require_stop_codon", True),
+    conda:
+        "envs/orf.yaml"
+    script:
+        "scripts/filter_orfs.py"
+
+
+rule coding_potential_intrinsic:
+    input:
+        table="results/orf/{sample}/{sample}_{te_name}_orfs_filtered.tsv",
+        nt_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_nt.fa",
+    output:
+        tsv="results/orf/{sample}/{sample}_{te_name}_intrinsic_scores.tsv",
+    log:
+        "results/logs/{sample}_{te_name}_coding_potential_intrinsic.log",
+    params:
+        high_threshold=config.get("orf_analysis", {}).get("intrinsic", {}).get("high_threshold", 0.70),
+        medium_threshold=config.get("orf_analysis", {}).get("intrinsic", {}).get("medium_threshold", 0.45),
+    conda:
+        "envs/orf.yaml"
+    script:
+        "scripts/coding_potential_intrinsic.py"
+
+
+rule build_rps_database:
+    """
+    Compile PSSM files (*.smp) from data/pfam/ into an RPS-BLAST database
+    using makeprofiledb (part of BLAST+).  The resulting database is reused
+    for every sample; it is rebuilt automatically whenever the .smp files change.
+    """
+    input:
+        smp=expand("{pssm_dir}/{name}.smp", pssm_dir=_PSSM_DIR, name=_SMP_NAMES),
+    output:
+        db="results/rpsdb/domains.rps",
+    log:
+        "results/logs/build_rps_database.log",
+    params:
+        db_prefix="results/rpsdb/domains",
+        pssm_dir=_PSSM_DIR,
+    conda:
+        "envs/rpsblast.yaml"
+    shell:
+        """
+        mkdir -p results/rpsdb
+        printf '%s\\n' {input.smp} > results/rpsdb/smp_list.txt
+        makeprofiledb -in results/rpsdb/smp_list.txt -out {params.db_prefix} -dbtype rps > {log} 2>&1
+        """
+
+
+rule rpsblast_domains:
+    input:
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+        db="results/rpsdb/domains.rps",
+    output:
+        hits="results/orf/{sample}/{sample}_{te_name}_rpsblast_hits.tsv",
+        summary="results/orf/{sample}/{sample}_{te_name}_rpsblast_summary.tsv",
+    log:
+        "results/logs/{sample}_{te_name}_rpsblast_domains.log",
+    threads: 4
+    params:
+        db="results/rpsdb/domains",
+        evalue=config.get("orf_analysis", {}).get("rpsblast", {}).get("evalue", 1e-5),
+        max_target_seqs=config.get("orf_analysis", {}).get("rpsblast", {}).get("max_target_seqs", 10),
+        min_query_coverage=config.get("orf_analysis", {}).get("rpsblast", {}).get("min_query_coverage", 0.35),
+        min_bitscore=config.get("orf_analysis", {}).get("rpsblast", {}).get("min_bitscore", 50),
+        domains_csv=config.get("orf_analysis", {}).get("rpsblast", {}).get("domains_csv", "data/domains.csv"),
+    conda:
+        "envs/rpsblast.yaml"
+    script:
+        "scripts/rpsblast_domains.py"
+
+
+rule classify_orf_confidence:
+    input:
+        filtered_orfs="results/orf/{sample}/{sample}_{te_name}_orfs_filtered.tsv",
+        intrinsic_scores="results/orf/{sample}/{sample}_{te_name}_intrinsic_scores.tsv",
+        domain_summary="results/orf/{sample}/{sample}_{te_name}_rpsblast_summary.tsv",
+    output:
+        tsv="results/orf/{sample}/{sample}_{te_name}_orf_classification.tsv",
+    log:
+        "results/logs/{sample}_{te_name}_classify_orf_confidence.log",
+    params:
+        high_min_aa=config.get("orf_analysis", {}).get("classification", {}).get("high_min_aa", 300),
+        high_min_intrinsic=config.get("orf_analysis", {}).get("classification", {}).get("high_min_intrinsic", 0.60),
+        putative_min_aa=config.get("orf_analysis", {}).get("classification", {}).get("putative_min_aa", 150),
+        putative_min_intrinsic=config.get("orf_analysis", {}).get("classification", {}).get("putative_min_intrinsic", 0.50),
+        required_domains=config.get("orf_analysis", {}).get("domain_filter", {}).get("required_domains", []),
+        min_domain_types_per_orf=config.get("orf_analysis", {}).get("domain_filter", {}).get("min_domain_types_per_orf", 1),
+        allow_split_across_orfs=config.get("orf_analysis", {}).get("domain_filter", {}).get("allow_split_across_orfs", False),
+        te_coverage_scope=config.get("orf_analysis", {}).get("domain_filter", {}).get("te_coverage_scope", "all"),
+    conda:
+        "envs/orf.yaml"
+    script:
+        "scripts/classify_orf_confidence.py"
+
+
+rule orf_report:
+    input:
+        raw_orfs="results/orf/{sample}/{sample}_{te_name}_orfs_raw.tsv",
+        classified="results/orf/{sample}/{sample}_{te_name}_orf_classification.tsv",
+    output:
+        summary_tsv="results/reports/{sample}_{te_name}_orf_summary.tsv",
+        summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
+    log:
+        "results/logs/{sample}_{te_name}_orf_report.log",
+    conda:
+        "envs/pandas.yaml"
+    script:
+        "scripts/orf_report.py"
+
+
+rule final:
+    input:
+        plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
+        summary_tsv="results/reports/{sample}_{te_name}_orf_summary.tsv",
+        summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
+    output:
+        touch("results/final/{sample}_{te_name}.done"),
+    shell:
+        "echo 'Done'"

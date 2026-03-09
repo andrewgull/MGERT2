@@ -3,8 +3,33 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# RepMod data
+*families.fa
+*families.stk
+*rmod.log
+*.nhr
+*.nin
+*.njs
+*.nnd
+*.nni
+*.nog
+*.nsq
+*.translation
+RM_*/
+
+
 # C extensions
 *.so
+
+# snakemake files
+.snakemake/
+results/
+
+# reads
+data/*.fasta.gz
+
+# IDE files?
+.DS_Store
 
 # Distribution / packaging
 .Python
@@ -55,15 +80,8 @@ cover/
 *.mo
 *.pot
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
+# manual tests
+software_tests/
 
 # Scrapy stuff:
 .scrapy
@@ -182,9 +200,9 @@ cython_debug/
 .abstra/
 
 # Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
+#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
+#  and can be added to the global gitignore or merged into this file. However, if you prefer,
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 
