@@ -27,6 +27,7 @@ results/
 
 # reads
 data/*.fasta.gz
+genome_assemblies/
 
 # IDE files?
 .DS_Store
