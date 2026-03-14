@@ -1,4 +1,4 @@
-from snakemake.io import expand, directory, touch, multiext
+from snakemake.io import expand, directory, touch, multiext, temp
 
 # Collect PSSM files that will be compiled into the RPS-BLAST database.
 # Set rpsblast.pssm_dir in config to point to a different directory of *.smp files.
@@ -20,7 +20,7 @@ rule build_database:
     Build a database from the input genome assembly
     """
     input:
-        genome="data/{sample}.fasta.gz",
+        genome=config["genome"],
     output:
         multiext(
             "results/rmod_database/{sample}/{sample}_rmod",
@@ -79,7 +79,7 @@ rule collect_te:
 
 rule repeatmasker:
     input:
-        fasta="data/{sample}.fasta.gz",
+        fasta=config["genome"],
         te_lib="results/collect_te/{sample}/{sample}_{te_name}_family.fa",
     output:
         repeatmasker_dir=directory("results/repeatmasker/{sample}_{te_name}"),
@@ -107,7 +107,7 @@ rule repeatmasker:
 rule plot_repeat_landscape:
     input:
         repeatmasker_dir="results/repeatmasker/{sample}_{te_name}",
-        genome="data/{sample}.fasta.gz",
+        genome=config["genome"],
     output:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
     log:
@@ -135,7 +135,7 @@ rule make_te_bed:
 
 rule decompress_genome:
     input:
-        "data/{sample}.fasta.gz",
+        config["genome"],
     output:
         temp("results/genome/{sample}.fasta"),
     shell:

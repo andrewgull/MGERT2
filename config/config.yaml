@@ -3,6 +3,8 @@ samples:
 
 te_name: "Penelope"
 
+genome: "data/sample1.fasta.gz"
+
 repeatmasker:
   engine: "rmblast"
   extra: " -s -nocut"
