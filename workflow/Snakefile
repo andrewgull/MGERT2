@@ -1,3 +1,4 @@
+import os
 from snakemake.io import expand, directory, touch, multiext, temp
 
 # Collect PSSM files that will be compiled into the RPS-BLAST database.
@@ -5,12 +6,16 @@ from snakemake.io import expand, directory, touch, multiext, temp
 _PSSM_DIR = config.get("orf_analysis", {}).get("rpsblast", {}).get("pssm_dir", "data/pfam")
 (_SMP_NAMES,) = glob_wildcards(f"{_PSSM_DIR}/{{name}}.smp")
 
+# Derive sample names from genome paths: strip directories and all extensions.
+# e.g. "data/my_genome.fasta.gz" → "my_genome"
+_SAMPLE_TO_GENOME = {os.path.basename(p).split(".")[0]: p for p in config["genomes"]}
+
 
 rule all:
     input:
         expand(
             "results/final/{sample}_{te_name}.done",
-            sample=config["samples"],
+            sample=list(_SAMPLE_TO_GENOME),
             te_name=config["te_name"],
         ),
 
@@ -20,7 +25,7 @@ rule build_database:
     Build a database from the input genome assembly
     """
     input:
-        genome=config["genome"],
+        genome=lambda wildcards: _SAMPLE_TO_GENOME[wildcards.sample],
     output:
         multiext(
             "results/rmod_database/{sample}/{sample}_rmod",

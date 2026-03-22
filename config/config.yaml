@@ -1,9 +1,7 @@
-samples:
-  - "sample1"
-
 te_name: "Penelope"
 
-genome: "data/sample1.fasta.gz"
+genomes:
+  - "data/sample1.fasta.gz"
 
 repeatmasker:
   engine: "rmblast"
