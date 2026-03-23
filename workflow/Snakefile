@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from snakemake.io import expand, directory, touch, multiext, temp
 
 # Collect PSSM files that will be compiled into the RPS-BLAST database.
@@ -6,11 +7,18 @@ from snakemake.io import expand, directory, touch, multiext, temp
 _PSSM_DIR = config.get("orf_analysis", {}).get("rpsblast", {}).get("pssm_dir", "data/pfam")
 (_SMP_NAMES,) = glob_wildcards(f"{_PSSM_DIR}/{{name}}.smp")
 
-# Derive sample names from genome paths: strip directories and all extensions.
-# e.g. "data/my_genome.fasta.gz" → "my_genome"
+# Derive sample names from genome paths: strip known compression and FASTA
+# suffixes so that e.g. "data/E.coli.fasta.gz" → "E.coli".
+_COMPRESSION_SUFFIXES = {".gz", ".bz2", ".xz"}
+_FASTA_SUFFIXES = {".fasta", ".fa", ".fna", ".ffn", ".fas"}
 _SAMPLE_TO_GENOME = {}
 for _p in config["genomes"]:
-    _name = os.path.basename(_p).split(".")[0]
+    _stem = Path(_p).name
+    if Path(_stem).suffix in _COMPRESSION_SUFFIXES:
+        _stem = Path(_stem).stem
+    if Path(_stem).suffix in _FASTA_SUFFIXES:
+        _stem = Path(_stem).stem
+    _name = _stem
     if _name in _SAMPLE_TO_GENOME:
         raise ValueError(
             f"Duplicate sample name '{_name}' derived from '{_p}' and "
