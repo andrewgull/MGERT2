@@ -8,7 +8,15 @@ _PSSM_DIR = config.get("orf_analysis", {}).get("rpsblast", {}).get("pssm_dir", "
 
 # Derive sample names from genome paths: strip directories and all extensions.
 # e.g. "data/my_genome.fasta.gz" → "my_genome"
-_SAMPLE_TO_GENOME = {os.path.basename(p).split(".")[0]: p for p in config["genomes"]}
+_SAMPLE_TO_GENOME = {}
+for _p in config["genomes"]:
+    _name = os.path.basename(_p).split(".")[0]
+    if _name in _SAMPLE_TO_GENOME:
+        raise ValueError(
+            f"Duplicate sample name '{_name}' derived from '{_p}' and "
+            f"'{_SAMPLE_TO_GENOME[_name]}'. Rename one of the genome files."
+        )
+    _SAMPLE_TO_GENOME[_name] = _p
 
 
 rule all:
@@ -84,7 +92,7 @@ rule collect_te:
 
 rule repeatmasker:
     input:
-        fasta=config["genome"],
+        fasta=lambda wildcards: _SAMPLE_TO_GENOME[wildcards.sample],
         te_lib="results/collect_te/{sample}/{sample}_{te_name}_family.fa",
     output:
         repeatmasker_dir=directory("results/repeatmasker/{sample}_{te_name}"),
@@ -112,7 +120,7 @@ rule repeatmasker:
 rule plot_repeat_landscape:
     input:
         repeatmasker_dir="results/repeatmasker/{sample}_{te_name}",
-        genome=config["genome"],
+        genome=lambda wildcards: _SAMPLE_TO_GENOME[wildcards.sample],
     output:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
     log:
@@ -140,7 +148,7 @@ rule make_te_bed:
 
 rule decompress_genome:
     input:
-        config["genome"],
+        lambda wildcards: _SAMPLE_TO_GENOME[wildcards.sample],
     output:
         temp("results/genome/{sample}.fasta"),
     shell:
