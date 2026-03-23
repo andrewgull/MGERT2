@@ -1,6 +1,4 @@
-samples:
-  - "genome"
-
 te_name: "Penelope"
 
-genome: "data/genome.fasta.gz"
+genomes:
+  - "data/genome.fasta.gz"
