@@ -61,8 +61,9 @@ Edit `config/config.yaml` before running.
 #### Required settings
 
 ```yaml
-samples:
-  - "my_genome"   # basename of data/my_genome.fasta.gz
+genomes:
+  - "/path/to/organism1.fasta.gz" # compression suffixes will be stripped to derive sample names
+  - "/path/to/organism2.fna.gz" # fasta suffixes will be stripped to derive sample names
 
 te_name: "Penelope"  # TE family name to find in RepeatModeler output
 ```
