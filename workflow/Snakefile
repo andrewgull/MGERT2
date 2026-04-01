@@ -320,11 +320,61 @@ rule orf_report:
         "scripts/orf_report.py"
 
 
+rule align_orfs:
+    """
+    Align filtered ORF amino acid sequences with MAFFT before tree inference.
+    """
+    input:
+        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+    output:
+        alignment="results/phylogeny/{sample}/{sample}_{te_name}_orfs_aligned.fa",
+    log:
+        "results/logs/{sample}_{te_name}_align_orfs.log",
+    threads: 4
+    conda:
+        "envs/phylogeny.yaml"
+    shell:
+        "mafft --auto --thread {threads} {input.aa_fasta} > {output.alignment} 2> {log}"
+
+
+rule build_phylogeny:
+    """
+    Infer a maximum likelihood phylogenetic tree from aligned ORF sequences
+    using IQ-TREE2 with automatic model selection and ultrafast bootstrap.
+    """
+    input:
+        alignment="results/phylogeny/{sample}/{sample}_{te_name}_orfs_aligned.fa",
+    output:
+        treefile="results/phylogeny/{sample}/{sample}_{te_name}.treefile",
+    log:
+        "results/logs/{sample}_{te_name}_build_phylogeny.log",
+    threads: 4
+    params:
+        prefix=lambda wildcards: f"results/phylogeny/{wildcards.sample}/{wildcards.sample}_{wildcards.te_name}",
+        bootstrap=config.get("phylogeny", {}).get("bootstrap", 1000),
+        model=config.get("phylogeny", {}).get("model", "MFP"),
+        seed=config.get("phylogeny", {}).get("seed", 12345),
+    conda:
+        "envs/phylogeny.yaml"
+    shell:
+        """
+        iqtree2 \
+            -s {input.alignment} \
+            -m {params.model} \
+            -B {params.bootstrap} \
+            -alrt 1000 \
+            -T {threads} \
+            --seed {params.seed} \
+            --prefix {params.prefix} > {log} 2>&1
+        """
+
+
 rule final:
     input:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
         summary_tsv="results/reports/{sample}_{te_name}_orf_summary.tsv",
         summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
+        treefile="results/phylogeny/{sample}/{sample}_{te_name}.treefile",
     output:
         touch("results/final/{sample}_{te_name}.done"),
     shell:
