@@ -61,7 +61,7 @@ rule build_database:
     params:
         basename=lambda wildcards: f"results/rmod_database/{wildcards.sample}/{wildcards.sample}_rmod",
     shell:
-        """BuildDatabase -name {params.basename} {input.genome} > {log} 2>&1"""
+        """(BuildDatabase -name {params.basename} {input.genome}) > {log} 2>&1"""
 
 
 rule repeatmodeler:
@@ -320,11 +320,90 @@ rule orf_report:
         "scripts/orf_report.py"
 
 
+rule pool_orfs:
+    """
+    Concatenate filtered ORF amino acid sequences from all samples for a given
+    TE family into a single FASTA for cross-sample phylogenetic analysis.
+    """
+    input:
+        lambda wildcards: expand(
+            "results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+            sample=list(_SAMPLE_TO_GENOME),
+            te_name=wildcards.te_name,
+        ),
+    output:
+        pooled="results/phylogeny/{te_name}_orfs_pooled.fa",
+    log:
+        "results/logs/{te_name}_pool_orfs.log",
+    shell:
+        "cat {input} > {output.pooled} 2> {log}"
+
+
+rule align_orfs:
+    """
+    Align pooled ORF amino acid sequences across all samples with MAFFT.
+    """
+    input:
+        pooled="results/phylogeny/{te_name}_orfs_pooled.fa",
+    output:
+        alignment="results/phylogeny/{te_name}_orfs_aligned.fa",
+    log:
+        "results/logs/{te_name}_align_orfs.log",
+    threads: 4
+    conda:
+        "envs/phylogeny.yaml"
+    shell:
+        "mafft --auto --thread {threads} {input.pooled} > {output.alignment} 2> {log}"
+
+
+rule build_phylogeny:
+    """
+    Infer a maximum likelihood phylogenetic tree from aligned ORF sequences
+    using IQ-TREE2 with automatic model selection and ultrafast bootstrap.
+    """
+    input:
+        alignment="results/phylogeny/{te_name}_orfs_aligned.fa",
+    output:
+        multiext(
+            "results/phylogeny/{te_name}",
+            ".treefile",  # best ML tree (Newick)
+            ".contree",  # consensus tree with bootstrap support
+            ".iqtree",  # full analysis report
+            ".log",  # run log
+            ".bionj",  # initial BIONJ tree
+            ".mldist",  # ML distance matrix
+            ".splits.nex",  # bootstrap splits (Nexus)
+            ".ckp.gz",  # checkpoint file
+        ),
+    log:
+        "results/logs/{te_name}_build_phylogeny.log",
+    threads: 4
+    params:
+        prefix=lambda wildcards: f"results/phylogeny/{wildcards.te_name}",
+        bootstrap=config.get("phylogeny", {}).get("bootstrap", 1000),
+        model=config.get("phylogeny", {}).get("model", "MFP"),
+        seed=config.get("phylogeny", {}).get("seed", 12345),
+    conda:
+        "envs/phylogeny.yaml"
+    shell:
+        """
+        iqtree2 \
+            -s {input.alignment} \
+            -m {params.model} \
+            -B {params.bootstrap} \
+            -alrt 1000 \
+            -T {threads} \
+            --seed {params.seed} \
+            --prefix {params.prefix} > {log} 2>&1
+        """
+
+
 rule final:
     input:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
         summary_tsv="results/reports/{sample}_{te_name}_orf_summary.tsv",
         summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
+        treefile="results/phylogeny/{te_name}.treefile",
     output:
         touch("results/final/{sample}_{te_name}.done"),
     shell:

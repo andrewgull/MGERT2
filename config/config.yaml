@@ -58,3 +58,8 @@ orf_analysis:
     high_min_intrinsic: 0.60
     putative_min_aa: 150
     putative_min_intrinsic: 0.50
+
+phylogeny:
+  model: "MFP"       # MFP = ModelFinder Plus (automatic selection); or e.g. "LG+G4"
+  bootstrap: 1000    # ultrafast bootstrap replicates (minimum 1000 for publication)
+  seed: 12345        # fixed seed for reproducibility
