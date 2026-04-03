@@ -16,8 +16,8 @@ This document outlines the core functional and non-functional requirements for t
 |R5 | Functional | ORF search | DONE | Given the output from R4 (a fasta file), this rule hall identify open reading frames within the sequences. | [ORFfinder](https://www.ncbi.nlm.nih.gov/orffinder/) |
 |R6 | Functional | Domain search | DONE | Given the output from R5 (a fasta file), this rule shall identify conserved protein domains within the sequences. | [RPS-BLAST](https://warwick.ac.uk/fac/sci/moac/people/students/peter_cock/python/rpsblast/) |
 | R7 | Functional | Filtering | DONE | Given the output from R4, R5, R6, this rule shall filter out the TE seqs without ORFs, or CDs inside them | Custom script |
-| R8 | Fuctional | Flanking regions | WONTDO | Given the output from R7, this rule shall add flanking regions to the input sequences | Custom script |
-| R9 | Functional | DONE | Build a phylogenetic tree | Given the ORF iwth CD (RT for example), this rule shall build a phylogenetic tree | [IQ-Tree](https://iqtree.github.io/) |
+| R8 | Functional | Flanking regions | WONTDO | Given the output from R7, this rule shall add flanking regions to the input sequences | Custom script |
+| R9 | Functional | Build a phylogenetic tree | DONE | Given the ORF with CD (RT for example), this rule shall build a phylogenetic tree | [IQ-Tree](https://iqtree.github.io/) |
 ---
 
 This functionality has been implemented. The next steps can be found under the `Issues` tab.
