@@ -320,21 +320,40 @@ rule orf_report:
         "scripts/orf_report.py"
 
 
-rule align_orfs:
+rule pool_orfs:
     """
-    Align filtered ORF amino acid sequences with MAFFT before tree inference.
+    Concatenate filtered ORF amino acid sequences from all samples for a given
+    TE family into a single FASTA for cross-sample phylogenetic analysis.
     """
     input:
-        aa_fasta="results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+        lambda wildcards: expand(
+            "results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+            sample=list(_SAMPLE_TO_GENOME),
+            te_name=wildcards.te_name,
+        ),
     output:
-        alignment="results/phylogeny/{sample}/{sample}_{te_name}_orfs_aligned.fa",
+        pooled="results/phylogeny/{te_name}_orfs_pooled.fa",
     log:
-        "results/logs/{sample}_{te_name}_align_orfs.log",
+        "results/logs/{te_name}_pool_orfs.log",
+    shell:
+        "cat {input} > {output.pooled} 2> {log}"
+
+
+rule align_orfs:
+    """
+    Align pooled ORF amino acid sequences across all samples with MAFFT.
+    """
+    input:
+        pooled="results/phylogeny/{te_name}_orfs_pooled.fa",
+    output:
+        alignment="results/phylogeny/{te_name}_orfs_aligned.fa",
+    log:
+        "results/logs/{te_name}_align_orfs.log",
     threads: 4
     conda:
         "envs/phylogeny.yaml"
     shell:
-        "mafft --auto --thread {threads} {input.aa_fasta} > {output.alignment} 2> {log}"
+        "mafft --auto --thread {threads} {input.pooled} > {output.alignment} 2> {log}"
 
 
 rule build_phylogeny:
@@ -343,14 +362,14 @@ rule build_phylogeny:
     using IQ-TREE2 with automatic model selection and ultrafast bootstrap.
     """
     input:
-        alignment="results/phylogeny/{sample}/{sample}_{te_name}_orfs_aligned.fa",
+        alignment="results/phylogeny/{te_name}_orfs_aligned.fa",
     output:
-        treefile="results/phylogeny/{sample}/{sample}_{te_name}.treefile",
+        treefile="results/phylogeny/{te_name}.treefile",
     log:
-        "results/logs/{sample}_{te_name}_build_phylogeny.log",
+        "results/logs/{te_name}_build_phylogeny.log",
     threads: 4
     params:
-        prefix=lambda wildcards: f"results/phylogeny/{wildcards.sample}/{wildcards.sample}_{wildcards.te_name}",
+        prefix=lambda wildcards: f"results/phylogeny/{wildcards.te_name}",
         bootstrap=config.get("phylogeny", {}).get("bootstrap", 1000),
         model=config.get("phylogeny", {}).get("model", "MFP"),
         seed=config.get("phylogeny", {}).get("seed", 12345),
@@ -374,7 +393,7 @@ rule final:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
         summary_tsv="results/reports/{sample}_{te_name}_orf_summary.tsv",
         summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
-        treefile="results/phylogeny/{sample}/{sample}_{te_name}.treefile",
+        treefile="results/phylogeny/{te_name}.treefile",
     output:
         touch("results/final/{sample}_{te_name}.done"),
     shell:
