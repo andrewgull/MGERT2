@@ -364,7 +364,17 @@ rule build_phylogeny:
     input:
         alignment="results/phylogeny/{te_name}_orfs_aligned.fa",
     output:
-        treefile="results/phylogeny/{te_name}.treefile",
+        multiext(
+            "results/phylogeny/{te_name}",
+            ".treefile",  # best ML tree (Newick)
+            ".contree",  # consensus tree with bootstrap support
+            ".iqtree",  # full analysis report
+            ".log",  # run log
+            ".bionj",  # initial BIONJ tree
+            ".mldist",  # ML distance matrix
+            ".splits.nex",  # bootstrap splits (Nexus)
+            ".ckp.gz",  # checkpoint file
+        ),
     log:
         "results/logs/{te_name}_build_phylogeny.log",
     threads: 4
