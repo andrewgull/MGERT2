@@ -61,7 +61,7 @@ rule build_database:
     params:
         basename=lambda wildcards: f"results/rmod_database/{wildcards.sample}/{wildcards.sample}_rmod",
     shell:
-        """BuildDatabase -name {params.basename} {input.genome} > {log} 2>&1"""
+        """(BuildDatabase -name {params.basename} {input.genome}) > {log} 2>&1"""
 
 
 rule repeatmodeler:
