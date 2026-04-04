@@ -1,4 +1,5 @@
 import logging
+import sys
 from Bio import SeqIO
 from utils import setup_logging
 
@@ -19,7 +20,7 @@ def collect_te(fasta_file, te_name):
     records = SeqIO.parse(fasta_file, "fasta")
     collection = []
     for record in records:
-        if te_name in record.id:
+        if record.id.startswith(te_name):
             collection.append(record)
     return collection
 
@@ -32,6 +33,12 @@ def main(input_fasta, output_fasta, te_name, log_file=None):
     logger.info(f"Collecting sequences for TE: {te_name}")
     collection = collect_te(input_fasta, te_name)
     logger.info(f"Found {len(collection)} sequences.")
+    if len(collection) == 0:
+        logger.error(
+            f"No sequences found matching TE name '{te_name}'. "
+            "Check that te_name in config matches RepeatModeler output IDs."
+        )
+        sys.exit(1)
     SeqIO.write(collection, output_fasta, "fasta")
 
 

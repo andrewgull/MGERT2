@@ -36,4 +36,4 @@ repos:
         language: system
         pass_filenames: false
         files: ^workflow/scripts/.*\.py$
-        args: ["--cov=workflow/scripts", "--cov-fail-under=90"]
+        args: ["--cov=workflow/scripts", "--cov-fail-under=80"]

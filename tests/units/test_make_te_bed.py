@@ -42,8 +42,8 @@ def test_parse_repeatmasker_out(mock_repeatmasker_content):
     mock_file = StringIO(mock_repeatmasker_content)
     df = parse_repeatmasker_out(mock_file)
     
-    # Verify number of columns (15 as per the list in make_te_bed.py)
-    assert len(df.columns) == 15
+    # Verify number of columns (16 including optional overlap marker)
+    assert len(df.columns) == 16
     
     # Verify number of rows (should skip 3 header lines)
     assert len(df) == 4
@@ -180,8 +180,8 @@ def test_find_out_file_not_found(tmp_path):
 
 
 def test_parse_repeatmasker_out_bad_line(tmp_path, mock_repeatmasker_content, caplog):
-    # A line with 16 tokens (one too many for the 15-column schema) triggers on_bad_line
-    bad_line = "   19   12.4  0.0  2.8  NW_017385987.1     1405    1441 (4175035) + (TAT)n           Simple_repeat       1     36    (0)    1    EXTRA\n"
+    # A line with 17 tokens (one too many for the 16-column schema) triggers on_bad_line
+    bad_line = "   19   12.4  0.0  2.8  NW_017385987.1     1405    1441 (4175035) + (TAT)n           Simple_repeat       1     36    (0)    1    *    EXTRA\n"
     bad_file = tmp_path / "bad.out"
     bad_file.write_text(mock_repeatmasker_content + bad_line)
     with caplog.at_level("WARNING"):

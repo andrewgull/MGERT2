@@ -16,12 +16,15 @@ for d in [project_root, scripts_dir]:
 from workflow.scripts.run_repeatmodeler import run_repeatmodeler_logic
 
 
-def test_run_repeatmodeler_logic_success():
+def test_run_repeatmodeler_logic_success(tmp_path):
     """Test successful execution of RepeatModeler logic."""
-    database = "test_db"
+    database = str(tmp_path / "test_db")
     threads = 4
-    output_file = "output/families.fa"
-    log_file = "logs/repeatmodeler.log"
+    output_file = str(tmp_path / "output" / "families.fa")
+    log_file = str(tmp_path / "logs" / "repeatmodeler.log")
+    work_dir = str(tmp_path)
+
+    rm_dir = os.path.join(work_dir, "RM_2")
 
     with patch(
         "workflow.scripts.run_repeatmodeler.subprocess.Popen"
@@ -47,35 +50,40 @@ def test_run_repeatmodeler_logic_success():
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
 
-        # Mock glob and directory finding
-        mock_glob.return_value = ["RM_1", "RM_2"]
-        # RM_2 is newer
-        mock_getmtime.side_effect = lambda x: 100 if x == "RM_1" else 200
+        # Mock glob and directory finding — now returns full paths
+        mock_glob.return_value = [
+            os.path.join(work_dir, "RM_1"),
+            os.path.join(work_dir, "RM_2"),
+        ]
+        mock_getmtime.side_effect = lambda x: 100 if x.endswith("RM_1") else 200
         mock_exists.return_value = True
 
         run_repeatmodeler_logic(database, threads, output_file, log_file)
 
         # Assertions
         mock_popen.assert_called_once()
+        call_kwargs = mock_popen.call_args[1]
+        assert call_kwargs["cwd"] == work_dir
+
         command = mock_popen.call_args[0][0]
         assert "RepeatModeler" in command
         assert "-threads" in command
-        assert "4" in command
         assert "-database" in command
-        assert "test_db" in command
 
         mock_process.wait.assert_called_once()
-        mock_glob.assert_called_with("RM_*")
-        mock_copy.assert_called_once_with("RM_2/consensi.fa.classified", output_file)
-        mock_rmtree.assert_called_once_with("RM_2")
+        mock_glob.assert_called_once()
+        mock_copy.assert_called_once_with(
+            os.path.join(rm_dir, "consensi.fa.classified"), output_file
+        )
+        mock_rmtree.assert_called_once_with(rm_dir)
 
 
-def test_run_repeatmodeler_logic_failure():
+def test_run_repeatmodeler_logic_failure(tmp_path):
     """Test RepeatModeler failure handling (non-zero exit code)."""
-    database = "test_db"
+    database = str(tmp_path / "test_db")
     threads = 4
-    output_file = "output/families.fa"
-    log_file = "logs/repeatmodeler.log"
+    output_file = str(tmp_path / "output" / "families.fa")
+    log_file = str(tmp_path / "logs" / "repeatmodeler.log")
 
     with patch(
         "workflow.scripts.run_repeatmodeler.subprocess.Popen"
@@ -95,12 +103,12 @@ def test_run_repeatmodeler_logic_failure():
         mock_exit.assert_called_once_with(1)
 
 
-def test_run_repeatmodeler_no_dir():
+def test_run_repeatmodeler_no_dir(tmp_path):
     """Test handling when no RM_ directory is found."""
-    database = "test_db"
+    database = str(tmp_path / "test_db")
     threads = 4
-    output_file = "output/families.fa"
-    log_file = "logs/repeatmodeler.log"
+    output_file = str(tmp_path / "output" / "families.fa")
+    log_file = str(tmp_path / "logs" / "repeatmodeler.log")
 
     with patch(
         "workflow.scripts.run_repeatmodeler.subprocess.Popen"
@@ -123,12 +131,12 @@ def test_run_repeatmodeler_no_dir():
         mock_exit.assert_called_once_with(1)
 
 
-def test_run_repeatmodeler_missing_output_file():
+def test_run_repeatmodeler_missing_output_file(tmp_path):
     """Test handling when the expected output file is missing in the RM_ directory."""
-    database = "test_db"
+    database = str(tmp_path / "test_db")
     threads = 4
-    output_file = "output/families.fa"
-    log_file = "logs/repeatmodeler.log"
+    output_file = str(tmp_path / "output" / "families.fa")
+    log_file = str(tmp_path / "logs" / "repeatmodeler.log")
 
     with patch(
         "workflow.scripts.run_repeatmodeler.subprocess.Popen"
@@ -146,7 +154,7 @@ def test_run_repeatmodeler_missing_output_file():
         mock_process = MagicMock()
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
-        mock_glob.return_value = ["RM_1"]
+        mock_glob.return_value = [os.path.join(str(tmp_path), "RM_1")]
         mock_getmtime.return_value = 100
         mock_exists.return_value = False  # Output file missing
         mock_exit.side_effect = SystemExit

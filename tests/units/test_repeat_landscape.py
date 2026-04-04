@@ -73,8 +73,8 @@ def test_parse_repeatmasker_out_bad_line(tmp_path, caplog):
     header = ["header1\n", "header2\n", "header3\n"]
     # Good line
     line1 = "  100    5.0  0.0  0.0  chr1           1     100   (1000)  +  L1              LINE/L1               1  100    (0)    1\n"
-    # Bad line (too many columns)
-    line2 = "  100    5.0  0.0  0.0  chr1           1     100   (1000)  +  L1              LINE/L1               1  100    (0)    1 EXTRA\n"
+    # Bad line (too many columns — 17 tokens vs 16-column schema)
+    line2 = "  100    5.0  0.0  0.0  chr1           1     100   (1000)  +  L1              LINE/L1               1  100    (0)    1 * EXTRA\n"
     
     with open(out_path, "w") as f:
         f.writelines(header)

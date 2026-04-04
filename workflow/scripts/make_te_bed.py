@@ -36,6 +36,7 @@ def parse_repeatmasker_out(filepath: str) -> pd.DataFrame:
         "r_end",
         "r_left",
         "id",
+        "overlap",
     ]
 
     def on_bad_line(bad_line):

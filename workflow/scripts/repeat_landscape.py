@@ -45,6 +45,7 @@ def parse_repeatmasker_out(filepath: str, genome_size: int) -> pd.DataFrame:
         "r_end",
         "r_left",
         "id",
+        "overlap",
     ]
     if genome_size <= 0:
         logger.error(f"Invalid genome_size: {genome_size}. Must be positive.")
@@ -114,7 +115,7 @@ def plot_landscape(data: pd.DataFrame, output_img: str) -> None:
     major_classes = data.groupby("class_family")["genome_perc"].sum().nlargest(5).index
     plot_data = data[data["class_family"].isin(major_classes)]
 
-    sns.barplot(data=plot_data, x="div_bin", y="genome_perc", hue="class_family", dodge=False)
+    sns.barplot(data=plot_data, x="div_bin", y="genome_perc", hue="class_family", dodge=True)
 
     plt.title("Genomic Repeat Landscape", fontsize=16)
     plt.xlabel("Divergence (Kimura distance %)", fontsize=12)

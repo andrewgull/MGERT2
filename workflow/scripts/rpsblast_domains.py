@@ -151,7 +151,8 @@ def main(
 
     hits = pd.read_csv(raw_out, sep="\t", names=RPS_COLS)
     hits["qcov"] = hits.apply(
-        lambda r: float(r["length"]) / max(qlen.get(r["qseqid"], 1), 1), axis=1
+        lambda r: float(r["qend"] - r["qstart"] + 1) / max(qlen.get(r["qseqid"], 1), 1),
+        axis=1,
     )
     hits = hits[
         (hits["evalue"] <= float(evalue))
@@ -159,11 +160,12 @@ def main(
         & (hits["bitscore"] >= float(min_bitscore))
     ]
     hits["domain_type"] = hits["stitle"].apply(lambda s: get_domain_type(s, domain_map))
-    hits.to_csv(hits_out, sep="\t", index=False)
 
     if hits.empty:
         write_empty_outputs(aa_fasta, hits_out, summary_out)
         return
+
+    hits.to_csv(hits_out, sep="\t", index=False)
 
     best = (
         hits.sort_values(

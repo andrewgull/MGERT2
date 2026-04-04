@@ -61,6 +61,15 @@ def test_collect_te_empty_fasta():
     assert len(results) == 0
 
 
+def test_main_no_sequences_exits_with_error(tmp_path, mock_fasta_content):
+    input_file = tmp_path / "input.fasta"
+    output_file = tmp_path / "output.fasta"
+    input_file.write_text(mock_fasta_content)
+
+    with pytest.raises(SystemExit):
+        main(str(input_file), str(output_file), "NONEXISTENT_TE")
+
+
 def test_main_logic(tmp_path, mock_fasta_content):
     # Setup temporary files
     input_file = tmp_path / "input.fasta"

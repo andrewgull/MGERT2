@@ -9,7 +9,6 @@ on:
 
 permissions:
   pull-requests: write
-  contents: write
 
 jobs:
   test-and-report:
@@ -23,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -44,7 +43,7 @@ jobs:
 
       - name: Pytest coverage comment
         if: steps.changed-files.outputs.any_changed == 'true'
-        uses: MishaKav/pytest-coverage-comment@main
+        uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           title: "🧬 Bioinformatics Script Coverage Report"

@@ -4,6 +4,7 @@ import shutil
 import glob
 import sys
 import logging
+import tempfile
 from utils import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -12,28 +13,41 @@ logger = logging.getLogger(__name__)
 def run_repeatmodeler_logic(database, threads, output_file, log_file: str):
     setup_logging(log_file, __name__)
 
+    # Use the database's parent directory as the working directory so that
+    # RepeatModeler creates its RM_<pid>.<timestamp> output there instead of
+    # the project root.  This prevents race conditions when multiple samples
+    # run in parallel under Snakemake.
+    db_abs = os.path.abspath(database)
+    work_dir = os.path.dirname(db_abs) or "."
+
     command = [
         "RepeatModeler",
         "-threads",
         str(threads),
         "-database",
-        database,
+        db_abs,
     ]
 
     logger.info(f"Running command: {' '.join(command)}")
+    logger.info(f"Working directory: {work_dir}")
 
     # Open in append mode because setup_logging might have already opened it
     with open(log_file, "a") as log:
-        process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, universal_newlines=True)
+        process = subprocess.Popen(
+            command,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            cwd=work_dir,
+        )
         process.wait()
 
     if process.returncode != 0:
         logger.error(f"RepeatModeler failed with return code {process.returncode}")
-        # Note: In a snakemake script, exiting with non-zero will fail the job.
         sys.exit(process.returncode)
 
-    # Find the output directory (RM_...)
-    rm_dirs = glob.glob("RM_*")
+    # Find the output directory (RM_...) inside the work_dir
+    rm_dirs = glob.glob(os.path.join(work_dir, "RM_*"))
     if not rm_dirs:
         logger.error("No RM_ directory found after RepeatModeler run.")
         sys.exit(1)
