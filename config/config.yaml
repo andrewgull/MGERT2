@@ -31,7 +31,7 @@ orf_analysis:
     # the domain_filter rules below.
     domains_csv: "data/domains.csv"
     # db is built automatically from pssm_dir via the build_rps_database rule
-    evalue: 1e-5
+    evalue: 1.0e-5
     max_target_seqs: 10
     min_query_coverage: 0.35
     min_bitscore: 50

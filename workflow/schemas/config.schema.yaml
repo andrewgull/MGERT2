@@ -1,0 +1,133 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+description: MGERT2 pipeline configuration schema
+type: object
+required:
+  - genomes
+  - te_name
+
+properties:
+  genomes:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      minLength: 1
+    description: "List of genome assembly paths (gzip-compressed FASTA)"
+
+  te_name:
+    type: string
+    minLength: 1
+    description: "TE family name to search for in RepeatModeler output"
+
+  repeatmasker:
+    type: object
+    properties:
+      engine:
+        type: string
+        enum: ["rmblast", "crossmatch", "abblast"]
+      extra:
+        type: string
+    additionalProperties: false
+
+  orf_analysis:
+    type: object
+    properties:
+      min_orf_aa:
+        type: integer
+        minimum: 1
+      require_start_codon:
+        type: boolean
+      max_orfs_per_te:
+        type: integer
+        minimum: 1
+      require_stop_codon:
+        type: boolean
+
+      intrinsic:
+        type: object
+        properties:
+          high_threshold:
+            type: number
+            minimum: 0.0
+            maximum: 1.0
+          medium_threshold:
+            type: number
+            minimum: 0.0
+            maximum: 1.0
+        additionalProperties: false
+
+      rpsblast:
+        type: object
+        properties:
+          pssm_dir:
+            type: string
+            minLength: 1
+          domains_csv:
+            type: string
+          evalue:
+            type: number
+            minimum: 0.0
+          max_target_seqs:
+            type: integer
+            minimum: 1
+          min_query_coverage:
+            type: number
+            minimum: 0.0
+            maximum: 1.0
+          min_bitscore:
+            type: number
+            minimum: 0.0
+        additionalProperties: false
+
+      domain_filter:
+        type: object
+        properties:
+          required_domains:
+            type: array
+            items:
+              type: string
+          min_domain_types_per_orf:
+            type: integer
+            minimum: 1
+          allow_split_across_orfs:
+            type: boolean
+          te_coverage_scope:
+            type: string
+            enum: ["all", "passing"]
+        additionalProperties: false
+
+      classification:
+        type: object
+        properties:
+          high_min_aa:
+            type: integer
+            minimum: 1
+          high_min_intrinsic:
+            type: number
+            minimum: 0.0
+            maximum: 1.0
+          putative_min_aa:
+            type: integer
+            minimum: 1
+          putative_min_intrinsic:
+            type: number
+            minimum: 0.0
+            maximum: 1.0
+        additionalProperties: false
+
+    additionalProperties: false
+
+  phylogeny:
+    type: object
+    properties:
+      model:
+        type: string
+        minLength: 1
+      bootstrap:
+        type: integer
+        minimum: 100
+      seed:
+        type: integer
+    additionalProperties: false
+
+additionalProperties: false
