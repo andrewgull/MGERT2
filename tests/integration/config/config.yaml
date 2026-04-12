@@ -2,3 +2,8 @@ te_name: "Penelope"
 
 genomes:
   - "data/genome.fasta.gz"
+
+orf_analysis:
+  rpsblast:
+    pssm_dir: "../../data/pfam"
+    domains_csv: "../../data/domains.csv"
