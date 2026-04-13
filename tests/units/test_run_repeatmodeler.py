@@ -1,7 +1,10 @@
 import os
 import sys
+from unittest.mock import MagicMock
+from unittest.mock import mock_open
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import MagicMock, patch, mock_open
 
 # Add the project root and scripts directory to sys.path to allow imports
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -35,7 +38,7 @@ def test_run_repeatmodeler_logic_success():
     ) as mock_copy, patch(
         "workflow.scripts.run_repeatmodeler.shutil.rmtree"
     ) as mock_rmtree, patch(
-        "workflow.scripts.run_repeatmodeler.logging.basicConfig"
+        "workflow.scripts.run_repeatmodeler.setup_logging"
     ), patch(
         "builtins.open", mock_open()
     ):
@@ -76,9 +79,7 @@ def test_run_repeatmodeler_logic_failure():
 
     with patch(
         "workflow.scripts.run_repeatmodeler.subprocess.Popen"
-    ) as mock_popen, patch(
-        "workflow.scripts.run_repeatmodeler.logging.basicConfig"
-    ), patch(
+    ) as mock_popen, patch("workflow.scripts.run_repeatmodeler.setup_logging"), patch(
         "builtins.open", mock_open()
     ), patch(
         "workflow.scripts.run_repeatmodeler.sys.exit"
@@ -103,9 +104,7 @@ def test_run_repeatmodeler_no_dir():
 
     with patch(
         "workflow.scripts.run_repeatmodeler.subprocess.Popen"
-    ) as mock_popen, patch(
-        "workflow.scripts.run_repeatmodeler.logging.basicConfig"
-    ), patch(
+    ) as mock_popen, patch("workflow.scripts.run_repeatmodeler.setup_logging"), patch(
         "builtins.open", mock_open()
     ), patch(
         "workflow.scripts.run_repeatmodeler.glob.glob"
@@ -133,9 +132,7 @@ def test_run_repeatmodeler_missing_output_file():
 
     with patch(
         "workflow.scripts.run_repeatmodeler.subprocess.Popen"
-    ) as mock_popen, patch(
-        "workflow.scripts.run_repeatmodeler.logging.basicConfig"
-    ), patch(
+    ) as mock_popen, patch("workflow.scripts.run_repeatmodeler.setup_logging"), patch(
         "builtins.open", mock_open()
     ), patch(
         "workflow.scripts.run_repeatmodeler.glob.glob"

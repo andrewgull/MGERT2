@@ -9,8 +9,8 @@
 
 ## Introduction
 
-This is a rework of [MGERT](https://github.com/andrewgull/MGERT) -
-aka a big-ass 6-year-old Python script which was slain by "dependency hell".
+This is a rework of [MGERT](https://github.com/andrewgull/MGERT) —
+a big-ass 6-year-old Python script slain by dependency hell.
 
 ---
 
@@ -20,13 +20,19 @@ aka a big-ass 6-year-old Python script which was slain by "dependency hell".
 
 MGERT2 takes one or more genome assemblies and a target TE family name, then:
 
-1. Builds a repeat database and runs **RepeatModeler2** to find TE families.
+1. Builds a repeat database per genome and runs **RepeatModeler2** to
+   discover TE families.
 2. Collects consensus sequences matching the target TE name.
-3. Runs **RepeatMasker** to locate all copies in the genome.
-4. Extracts the genomic TE sequences as FASTA.
-5. Calls ORFs, scores coding potential, and searches for protein domains
-   via **RPS-BLAST**.
-6. Classifies each ORF by confidence and produces a summary report.
+3. Runs **RepeatMasker** to locate all copies in each genome and plots
+   a Kimura-distance repeat landscape.
+4. Extracts the genomic TE copy sequences as FASTA.
+5. Calls ORFs, filters them, and scores intrinsic coding potential.
+6. Searches for protein domains via **RPS-BLAST** against a user-supplied
+   PSSM database; annotates each hit with a domain type (e.g. RT, EN).
+7. Classifies each ORF by confidence level and produces a summary report.
+8. Pools ORF sequences across all genomes, aligns them with **MAFFT**,
+   and infers a maximum-likelihood phylogenetic tree with **IQ-TREE2**
+   — one tree per TE family.
 
 ### Installation
 
@@ -43,9 +49,9 @@ This creates a fully reproducible environment with all tools and packages.
 
 | Path | Description |
 | --- | --- |
-| `data/{sample}.fasta.gz` | Gzip-compressed genome assembly |
-| `data/pfam/*.smp` | PSSM files for the RPS-BLAST domain database |
-| `data/domains.csv` | TSV mapping each `.smp` file to a domain type |
+| Any genome assembly path | Gzip-compressed FASTA (`.fasta.gz`, `.fa.gz`) |
+| `data/pfam/*.smp` | PSSM files compiled into the RPS-BLAST domain database |
+| `data/domains.csv` | TSV mapping each `.smp` filename to a domain type label |
 
 `data/domains.csv` is a two-column tab-separated file with no header:
 
@@ -54,17 +60,26 @@ pfam00078.smp   RT
 cd00304.smp     EN
 ```
 
+Genome files can live anywhere — their paths are listed directly in
+`config.yaml`. Sample names are derived automatically from the filename
+by stripping compression and FASTA suffixes:
+`/data/E.coli.fasta.gz` → sample name `E.coli`.
+
 ### Configuration
 
 Edit `config/config.yaml` before running.
 
-#### Required settings
+#### Genomes and TE name
 
 ```yaml
-samples:
-  - "my_genome"   # basename of data/my_genome.fasta.gz
+# List one or more genome assemblies; paths can be absolute or relative.
+# Compression (.gz, .bz2, .xz) and FASTA (.fasta, .fa, .fna, .ffn, .fas)
+# suffixes are stripped to derive the sample name.
+genomes:
+  - "data/organism1.fasta.gz"
+  - "data/organism2.fna.gz"
 
-te_name: "Penelope"  # TE family name to find in RepeatModeler output
+te_name: "Penelope"  # TE family name to search for in RepeatModeler output
 ```
 
 #### RepeatMasker
@@ -85,29 +100,36 @@ orf_analysis:
   require_stop_codon: true
 ```
 
-#### Domain filter
-
-Controls which ORFs and TEs are flagged as domain-supported.
+#### Domain search
 
 ```yaml
 orf_analysis:
   rpsblast:
-    pssm_dir: "data/pfam"          # directory of *.smp PSSM files
-    domains_csv: "data/domains.csv" # .smp → domain type mapping
+    pssm_dir: "data/pfam"           # directory of *.smp PSSM files
+    domains_csv: "data/domains.csv" # .smp filename → domain type mapping
     evalue: 1e-5
+    max_target_seqs: 10
     min_query_coverage: 0.35
     min_bitscore: 50
+```
 
+#### Domain filter
+
+Controls which ORFs and TEs are flagged as domain-supported in the
+classification output.
+
+```yaml
+orf_analysis:
   domain_filter:
     # Domain types (from domains.csv) that must be present.
     # Empty list = accept any domain hit.
     required_domains: []
-    # How many of required_domains each ORF must match.
+    # How many of required_domains an ORF must have to pass the per-ORF filter.
     min_domain_types_per_orf: 1
-    # true = RT and EN may be in different ORFs of the same TE.
+    # true = required domains may be spread across different ORFs of one TE.
     allow_split_across_orfs: false
-    # Which ORFs count toward TE-level coverage when split is on.
-    # "all" = every ORF; "passing" = only ORFs that pass per-ORF filter.
+    # Which ORFs count toward TE-level domain coverage when split is on.
+    # "all" = every ORF; "passing" = only ORFs that individually pass.
     te_coverage_scope: "all"
 ```
 
@@ -116,8 +138,8 @@ Common scenarios:
 - **Any domain hit is enough** — leave `required_domains: []`
 - **Each ORF must have RT** — `required_domains: ["RT"]`
 - **TE needs RT and EN, possibly in separate ORFs** —
-  `required_domains: ["RT","EN"]`, `allow_split_across_orfs: true`
-- **Same, but count only ORFs that individually pass** —
+  `required_domains: ["RT", "EN"]`, `allow_split_across_orfs: true`
+- **Same, but only count ORFs that pass per-ORF filter** —
   add `te_coverage_scope: "passing"`
 
 The filter adds two columns to the classification output:
@@ -131,7 +153,7 @@ The filter adds two columns to the classification output:
 orf_analysis:
   classification:
     high_min_aa: 300           # minimum length for high-confidence
-    high_min_intrinsic: 0.60   # minimum intrinsic score
+    high_min_intrinsic: 0.60   # minimum intrinsic coding score
     putative_min_aa: 150
     putative_min_intrinsic: 0.50
 ```
@@ -139,13 +161,25 @@ orf_analysis:
 Each ORF is labelled `high_confidence_coding`, `putative_coding`, or
 `unlikely_coding`.
 
+#### Phylogeny
+
+```yaml
+phylogeny:
+  model: "MFP"    # ModelFinder Plus (auto); or a fixed model e.g. "LG+G4"
+  bootstrap: 1000 # ultrafast bootstrap replicates (>=1000 for publication)
+  seed: 12345     # fixed seed for reproducible trees
+```
+
+ORF sequences from all genomes are pooled per TE family, aligned with
+MAFFT, and passed to IQ-TREE2. One tree is produced per `te_name`.
+
 ### Running
 
 ```bash
-# Validate configuration without running jobs
+# Validate configuration without running any jobs
 pixi run dry-run
 
-# Run the full pipeline (4 cores)
+# Run the full pipeline
 pixi run full-run
 ```
 
@@ -153,10 +187,13 @@ pixi run full-run
 
 | Path | Contents |
 | --- | --- |
-| `results/plots/` | Kimura-distance repeat landscape plots |
-| `results/extracted_te/` | Extracted TE copy sequences (FASTA) |
+| `results/plots/` | Kimura-distance repeat landscape plots (per sample) |
+| `results/extracted_te/` | Extracted TE copy sequences in FASTA format |
 | `results/orf/*_orf_classification.tsv` | Per-ORF confidence and domain flags |
 | `results/reports/*_orf_summary.tsv` | Counts by confidence class |
 | `results/reports/*_orf_summary.html` | HTML version of the summary |
+| `results/phylogeny/{te_name}.treefile` | Best ML tree in Newick format |
+| `results/phylogeny/{te_name}.contree` | Consensus tree with bootstrap values |
+| `results/phylogeny/{te_name}.iqtree` | Full IQ-TREE2 analysis report |
 
 ---

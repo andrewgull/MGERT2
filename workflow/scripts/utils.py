@@ -3,10 +3,11 @@ import sys
 
 
 def setup_logging(log_file=None, logger_name=None):
-    """Set up logging to stdout and optionally to a file."""
-    handlers = [logging.StreamHandler(sys.stdout)]
+    """Set up logging to a file when provided, otherwise fall back to stdout."""
     if log_file:
-        handlers.append(logging.FileHandler(log_file, mode="a"))
+        handlers = [logging.FileHandler(log_file, mode="a")]
+    else:
+        handlers = [logging.StreamHandler(sys.stdout)]
 
     logging.basicConfig(
         level=logging.INFO,

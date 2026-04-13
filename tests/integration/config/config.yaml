@@ -1,6 +1,9 @@
-samples:
-  - "genome"
-
 te_name: "Penelope"
 
-genome: "data/genome.fasta.gz"
+genomes:
+  - "data/genome.fasta.gz"
+
+orf_analysis:
+  rpsblast:
+    pssm_dir: "../../data/pfam"
+    domains_csv: "../../data/domains.csv"

@@ -1,16 +1,107 @@
+import os
+import csv
+from pathlib import Path
 from snakemake.io import expand, directory, touch, multiext, temp
+from snakemake.utils import validate
+
+# --- Config schema validation (type, range, enum checks) ---
+validate(config, "schemas/config.schema.yaml")
+
+
+def _validate_inputs(cfg):
+    """Check that all referenced files and directories exist and are consistent."""
+    errors = []
+
+    # Genome files must exist
+    for genome_path in cfg.get("genomes", []):
+        if not Path(genome_path).exists():
+            errors.append(f"Genome file not found: '{genome_path}'")
+
+    # PSSM directory and its contents
+    pssm_dir = cfg.get("orf_analysis", {}).get("rpsblast", {}).get("pssm_dir", "data/pfam")
+    smp_files = list(Path(pssm_dir).glob("*.smp")) if Path(pssm_dir).is_dir() else []
+    if not Path(pssm_dir).is_dir():
+        errors.append(f"pssm_dir not found: '{pssm_dir}'")
+    elif not smp_files:
+        errors.append(f"No *.smp files found in pssm_dir: '{pssm_dir}'")
+
+    # domains.csv: exists, two columns, no duplicates, all .smp files present in pssm_dir
+    domains_csv = cfg.get("orf_analysis", {}).get("rpsblast", {}).get("domains_csv", "")
+    if domains_csv:
+        if not Path(domains_csv).exists():
+            errors.append(f"domains_csv not found: '{domains_csv}'")
+        else:
+            seen_smp = {}
+            smp_stems = {f.name for f in smp_files}
+            with open(domains_csv, newline="") as fh:
+                for i, row in enumerate(csv.reader(fh, delimiter="\t"), start=1):
+                    if len(row) != 2:
+                        errors.append(f"domains_csv line {i}: expected 2 tab-separated columns, got {len(row)}")
+                        continue
+                    smp_name, domain_type = row[0].strip(), row[1].strip()
+                    if not domain_type:
+                        errors.append(f"domains_csv line {i}: domain type is empty for '{smp_name}'")
+                    if smp_name in seen_smp:
+                        errors.append(
+                            f"domains_csv line {i}: duplicate entry '{smp_name}' " f"(first seen on line {seen_smp[smp_name]})"
+                        )
+                    seen_smp[smp_name] = i
+                    if smp_stems and smp_name not in smp_stems:
+                        errors.append(f"domains_csv line {i}: '{smp_name}' not found in '{pssm_dir}'")
+
+        # required_domains entries must appear in domains_csv domain types
+        required = cfg.get("orf_analysis", {}).get("domain_filter", {}).get("required_domains", [])
+        if required and Path(domains_csv).exists():
+            known_types = set()
+            with open(domains_csv, newline="") as fh:
+                for row in csv.reader(fh, delimiter="\t"):
+                    if len(row) == 2:
+                        known_types.add(row[1].strip())
+            unknown = [d for d in required if d not in known_types]
+            if unknown:
+                errors.append(
+                    f"required_domains references unknown domain type(s): {unknown}. "
+                    f"Known types from domains_csv: {sorted(known_types)}"
+                )
+
+    if errors:
+        raise ValueError(
+            "Configuration errors found — fix before running the pipeline:\n" + "\n".join(f"  • {e}" for e in errors)
+        )
+
+
+_validate_inputs(config)
 
 # Collect PSSM files that will be compiled into the RPS-BLAST database.
 # Set rpsblast.pssm_dir in config to point to a different directory of *.smp files.
 _PSSM_DIR = config.get("orf_analysis", {}).get("rpsblast", {}).get("pssm_dir", "data/pfam")
 (_SMP_NAMES,) = glob_wildcards(f"{_PSSM_DIR}/{{name}}.smp")
 
+# Derive sample names from genome paths: strip known compression and FASTA
+# suffixes so that e.g. "data/E.coli.fasta.gz" → "E.coli".
+_COMPRESSION_SUFFIXES = {".gz", ".bz2", ".xz"}
+_FASTA_SUFFIXES = {".fasta", ".fa", ".fna", ".ffn", ".fas"}
+_SAMPLE_TO_GENOME = {}
+for _p in config["genomes"]:
+    _stem = Path(_p).name
+    if Path(_stem).suffix in _COMPRESSION_SUFFIXES:
+        _stem = Path(_stem).stem
+    if Path(_stem).suffix in _FASTA_SUFFIXES:
+        _stem = Path(_stem).stem
+    _name = _stem
+    if _name in _SAMPLE_TO_GENOME:
+        raise ValueError(
+            f"Duplicate sample name '{_name}' derived from '{_p}' and "
+            f"'{_SAMPLE_TO_GENOME[_name]}'. Rename one of the genome files."
+        )
+    _SAMPLE_TO_GENOME[_name] = _p
+
 
 rule all:
     input:
         expand(
             "results/final/{sample}_{te_name}.done",
-            sample=config["samples"],
+            sample=list(_SAMPLE_TO_GENOME),
             te_name=config["te_name"],
         ),
 
@@ -20,7 +111,7 @@ rule build_database:
     Build a database from the input genome assembly
     """
     input:
-        genome=config["genome"],
+        genome=lambda wildcards: _SAMPLE_TO_GENOME[wildcards.sample],
     output:
         multiext(
             "results/rmod_database/{sample}/{sample}_rmod",
@@ -40,7 +131,7 @@ rule build_database:
     params:
         basename=lambda wildcards: f"results/rmod_database/{wildcards.sample}/{wildcards.sample}_rmod",
     shell:
-        """BuildDatabase -name {params.basename} {input.genome} > {log} 2>&1"""
+        """(BuildDatabase -name {params.basename} {input.genome}) > {log} 2>&1"""
 
 
 rule repeatmodeler:
@@ -79,7 +170,7 @@ rule collect_te:
 
 rule repeatmasker:
     input:
-        fasta=config["genome"],
+        fasta=lambda wildcards: _SAMPLE_TO_GENOME[wildcards.sample],
         te_lib="results/collect_te/{sample}/{sample}_{te_name}_family.fa",
     output:
         repeatmasker_dir=directory("results/repeatmasker/{sample}_{te_name}"),
@@ -107,7 +198,7 @@ rule repeatmasker:
 rule plot_repeat_landscape:
     input:
         repeatmasker_dir="results/repeatmasker/{sample}_{te_name}",
-        genome=config["genome"],
+        genome=lambda wildcards: _SAMPLE_TO_GENOME[wildcards.sample],
     output:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
     log:
@@ -135,7 +226,7 @@ rule make_te_bed:
 
 rule decompress_genome:
     input:
-        config["genome"],
+        lambda wildcards: _SAMPLE_TO_GENOME[wildcards.sample],
     output:
         temp("results/genome/{sample}.fasta"),
     shell:
@@ -299,11 +390,90 @@ rule orf_report:
         "scripts/orf_report.py"
 
 
+rule pool_orfs:
+    """
+    Concatenate filtered ORF amino acid sequences from all samples for a given
+    TE family into a single FASTA for cross-sample phylogenetic analysis.
+    """
+    input:
+        lambda wildcards: expand(
+            "results/orf/{sample}/{sample}_{te_name}_orfs_filtered_aa.fa",
+            sample=list(_SAMPLE_TO_GENOME),
+            te_name=wildcards.te_name,
+        ),
+    output:
+        pooled="results/phylogeny/{te_name}_orfs_pooled.fa",
+    log:
+        "results/logs/{te_name}_pool_orfs.log",
+    shell:
+        "cat {input} > {output.pooled} 2> {log}"
+
+
+rule align_orfs:
+    """
+    Align pooled ORF amino acid sequences across all samples with MAFFT.
+    """
+    input:
+        pooled="results/phylogeny/{te_name}_orfs_pooled.fa",
+    output:
+        alignment="results/phylogeny/{te_name}_orfs_aligned.fa",
+    log:
+        "results/logs/{te_name}_align_orfs.log",
+    threads: 4
+    conda:
+        "envs/phylogeny.yaml"
+    shell:
+        "mafft --auto --thread {threads} {input.pooled} > {output.alignment} 2> {log}"
+
+
+rule build_phylogeny:
+    """
+    Infer a maximum likelihood phylogenetic tree from aligned ORF sequences
+    using IQ-TREE2 with automatic model selection and ultrafast bootstrap.
+    """
+    input:
+        alignment="results/phylogeny/{te_name}_orfs_aligned.fa",
+    output:
+        multiext(
+            "results/phylogeny/{te_name}",
+            ".treefile",  # best ML tree (Newick)
+            ".contree",  # consensus tree with bootstrap support
+            ".iqtree",  # full analysis report
+            ".log",  # run log
+            ".bionj",  # initial BIONJ tree
+            ".mldist",  # ML distance matrix
+            ".splits.nex",  # bootstrap splits (Nexus)
+            ".ckp.gz",  # checkpoint file
+        ),
+    log:
+        "results/logs/{te_name}_build_phylogeny.log",
+    threads: 4
+    params:
+        prefix=lambda wildcards: f"results/phylogeny/{wildcards.te_name}",
+        bootstrap=config.get("phylogeny", {}).get("bootstrap", 1000),
+        model=config.get("phylogeny", {}).get("model", "MFP"),
+        seed=config.get("phylogeny", {}).get("seed", 12345),
+    conda:
+        "envs/phylogeny.yaml"
+    shell:
+        """
+        iqtree2 \
+            -s {input.alignment} \
+            -m {params.model} \
+            -B {params.bootstrap} \
+            -alrt 1000 \
+            -T {threads} \
+            --seed {params.seed} \
+            --prefix {params.prefix} > {log} 2>&1
+        """
+
+
 rule final:
     input:
         plot="results/plots/{sample}_{te_name}_repeat_landscape.png",
         summary_tsv="results/reports/{sample}_{te_name}_orf_summary.tsv",
         summary_html="results/reports/{sample}_{te_name}_orf_summary.html",
+        treefile="results/phylogeny/{te_name}.treefile",
     output:
         touch("results/final/{sample}_{te_name}.done"),
     shell:
