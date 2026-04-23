@@ -63,7 +63,7 @@ cd00304.smp     EN
 Genome files can live anywhere — their paths are listed directly in
 `config.yaml`. Sample names are derived automatically from the filename
 by stripping compression and FASTA suffixes:
-`/data/E.coli.fasta.gz` → sample name `E.coli`.
+`/data/X.laevis.fasta.gz` → sample name `X.laevis`.
 
 ### Configuration
 
@@ -179,8 +179,11 @@ MAFFT, and passed to IQ-TREE2. One tree is produced per `te_name`.
 # Validate configuration without running any jobs
 pixi run dry-run
 
-# Run the full pipeline
-pixi run full-run
+# Run full analysis using conda envs
+pixi run full-conda
+
+# or using containers
+pixi run full-container
 ```
 
 ### Outputs
