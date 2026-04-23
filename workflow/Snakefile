@@ -128,6 +128,8 @@ rule build_database:
         "results/logs/{sample}_build_database.log",
     conda:
         "envs/repeatmodeler.yaml"
+    container:
+        "docker://dfam/tetools:1.97"
     params:
         basename=lambda wildcards: f"results/rmod_database/{wildcards.sample}/{wildcards.sample}_rmod",
     shell:
@@ -147,6 +149,8 @@ rule repeatmodeler:
     threads: 8
     conda:
         "envs/repeatmodeler.yaml"
+    container:
+        "docker://dfam/tetools:1.97"
     params:
         db_basename=lambda wildcards, input: input.nhr.replace(".nhr", ""),
     script:
@@ -164,6 +168,8 @@ rule collect_te:
         te_name=lambda wildcards: wildcards.te_name,
     conda:
         "envs/biopython.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     script:
         "scripts/collect_te.py"
 
@@ -182,6 +188,8 @@ rule repeatmasker:
     threads: 8
     conda:
         "envs/repeatmasker.yaml"
+    container:
+        "docker://dfam/tetools:1.97"
     shell:
         """
         RepeatMasker \
@@ -205,6 +213,8 @@ rule plot_repeat_landscape:
         "results/logs/{sample}_{te_name}_plot_repeat_landscape.log",
     conda:
         "envs/matplotlib.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     script:
         "scripts/repeat_landscape.py"
 
@@ -220,6 +230,8 @@ rule make_te_bed:
         te_name=lambda wildcards: wildcards.te_name,
     conda:
         "envs/pandas.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     script:
         "scripts/make_te_bed.py"
 
@@ -243,6 +255,8 @@ rule extract_te_fasta:
         "results/logs/{sample}_{te_name}_extract_te_fasta.log",
     conda:
         "envs/bedtools.yaml"
+    container:
+        "docker://quay.io/biocontainers/bedtools:2.31.0--hf5e1c6e_3"
     shell:
         "bedtools getfasta -fi {input.genome} -bed {input.bed} -fo {output.fasta} -s > {log} 2>&1"
 
@@ -261,6 +275,8 @@ rule call_orfs:
         require_start_codon=config.get("orf_analysis", {}).get("require_start_codon", True),
     conda:
         "envs/orf.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     script:
         "scripts/call_orfs.py"
 
@@ -282,6 +298,8 @@ rule filter_orfs:
         require_stop_codon=config.get("orf_analysis", {}).get("require_stop_codon", True),
     conda:
         "envs/orf.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     script:
         "scripts/filter_orfs.py"
 
@@ -299,6 +317,8 @@ rule coding_potential_intrinsic:
         medium_threshold=config.get("orf_analysis", {}).get("intrinsic", {}).get("medium_threshold", 0.45),
     conda:
         "envs/orf.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     script:
         "scripts/coding_potential_intrinsic.py"
 
@@ -320,6 +340,8 @@ rule build_rps_database:
         pssm_dir=_PSSM_DIR,
     conda:
         "envs/rpsblast.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     shell:
         """
         mkdir -p results/rpsdb
@@ -347,6 +369,8 @@ rule rpsblast_domains:
         domains_csv=config.get("orf_analysis", {}).get("rpsblast", {}).get("domains_csv", "data/domains.csv"),
     conda:
         "envs/rpsblast.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     script:
         "scripts/rpsblast_domains.py"
 
@@ -371,6 +395,8 @@ rule classify_orf_confidence:
         te_coverage_scope=config.get("orf_analysis", {}).get("domain_filter", {}).get("te_coverage_scope", "all"),
     conda:
         "envs/orf.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     script:
         "scripts/classify_orf_confidence.py"
 
@@ -386,6 +412,8 @@ rule orf_report:
         "results/logs/{sample}_{te_name}_orf_report.log",
     conda:
         "envs/pandas.yaml"
+    container:
+        "docker://condaforge/miniforge3:latest"
     script:
         "scripts/orf_report.py"
 
@@ -422,6 +450,8 @@ rule align_orfs:
     threads: 4
     conda:
         "envs/phylogeny.yaml"
+    container:
+        "docker://quay.io/biocontainers/mafft:7.520--h031d066_3"
     shell:
         "mafft --auto --thread {threads} {input.pooled} > {output.alignment} 2> {log}"
 
@@ -455,6 +485,8 @@ rule build_phylogeny:
         seed=config.get("phylogeny", {}).get("seed", 12345),
     conda:
         "envs/phylogeny.yaml"
+    container:
+        "docker://quay.io/biocontainers/iqtree:2.2.6--h21ec9f0_0"
     shell:
         """
         iqtree2 \
