@@ -8,7 +8,7 @@ platforms = ["osx-arm64", "linux-64"]
 [tasks]
 dry-conda = "snakemake -n --cores 1 --use-conda --configfile config/config.yaml"
 full-conda = "snakemake --cores 4 --use-conda --configfile config/config.yaml"
-full-container = "snakemake --cores 8 --sdm apptainer --apptainer-prefix /tmp/snakemake-apptainer --configfile config/config.yaml"
+full-container = { cmd = "snakemake --cores 8 --sdm apptainer --apptainer-prefix ${HOME}/snakemake-apptainer --configfile config/config.yaml", env = { APPTAINER_TMPDIR = "${HOME}/snakemake-apptainer" } }
 format-smk = "snakefmt -l 130 workflow/Snakefile"
 format-smk-check = "snakefmt --check --verbose -l 130 workflow/Snakefile"
 lint = "snakemake --lint --configfile config/config.yaml"
