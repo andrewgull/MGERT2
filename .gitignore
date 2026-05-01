@@ -23,9 +23,10 @@ RM_*/
 .snakemake/
 results/
 
-# reads
+# data
 data/*.fasta.gz
 genome_assemblies/
+output/
 
 # system files
 .DS_Store
