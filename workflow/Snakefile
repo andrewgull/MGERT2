@@ -160,8 +160,18 @@ rule repeatmodeler:
         _C_TETOOLS
     params:
         db_basename=lambda wildcards, input: input.nhr.replace(".nhr", ""),
-    script:
-        "scripts/run_repeatmodeler.py"
+    shell:
+        """
+        WORK_DIR=$(dirname $(realpath {params.db_basename}))
+        ABS_DB=$(realpath {params.db_basename})
+        (cd "$WORK_DIR" && RepeatModeler -threads {threads} -database "$ABS_DB") >> {log} 2>&1
+        NEWEST_RM=$(ls -td "$WORK_DIR"/RM_*/ 2>/dev/null | head -1)
+        if [ -z "$NEWEST_RM" ]; then echo "ERROR: no RM_ directory found" >> {log}; exit 1; fi
+        if [ ! -f "$NEWEST_RM/consensi.fa.classified" ]; then echo "ERROR: consensi.fa.classified missing" >> {log}; exit 1; fi
+        mkdir -p $(dirname {output.families})
+        cp "$NEWEST_RM/consensi.fa.classified" {output.families}
+        rm -rf "$NEWEST_RM"
+        """
 
 
 rule collect_te:
