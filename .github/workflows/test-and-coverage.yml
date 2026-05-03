@@ -39,6 +39,7 @@ jobs:
       - name: Run tests and capture output
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
+          set -o pipefail
           pytest --cov=. --cov-report=term-missing --cov-fail-under=90 --color=no tests/units | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
