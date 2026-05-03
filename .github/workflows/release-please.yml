@@ -15,8 +15,5 @@ jobs:
       - uses: GoogleCloudPlatform/release-please-action@v4
         id: release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: python
-          package-name: MGERT2
-          default-branch: main
-          target-branch: main
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
