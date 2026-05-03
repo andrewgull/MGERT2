@@ -273,6 +273,66 @@ def test_main_hit_filtered_by_bitscore(tmp_path):
     assert df.iloc[0]["domain_support"] == False  # noqa: E712
 
 
+def test_main_hit_filtered_by_gapped_query_coverage(tmp_path):
+    """qcov is computed from (qend-qstart+1), not alignment length.
+
+    A gapped hit with length=40 but qend-qstart+1=30 on a 100-AA query has
+    real coverage 0.30, which is below min_query_coverage=0.35.  Using the
+    raw alignment length would give 0.40 and incorrectly pass the filter.
+    """
+    records = [SeqRecord(Seq("M" + "A" * 99), id="te1|orf_1", description="")]
+    SeqIO.write(records, str(tmp_path / "aa.fa"), "fasta")
+    aa = str(tmp_path / "aa.fa")
+    db_file = tmp_path / "mydb"
+    db_file.write_text("")
+    hits = str(tmp_path / "hits.tsv")
+    summary = str(tmp_path / "summary.tsv")
+
+    # length=40 (10 gap chars), qstart=1, qend=30 → real span = 30/100 = 0.30
+    gapped_hit = (
+        "\t".join(
+            [
+                "te1|orf_1",
+                "CDD:99999",
+                "80.0",
+                "40",
+                "5",
+                "2",
+                "1",
+                "30",
+                "1",
+                "40",
+                "1e-10",
+                "60.0",
+                "RT domain",
+            ]
+        )
+        + "\n"
+    )
+
+    def fake_run(cmd, check):
+        raw_out = cmd[cmd.index("-out") + 1]
+        with open(raw_out, "w") as fh:
+            fh.write(gapped_hit)
+
+    with patch(
+        "workflow.scripts.rpsblast_domains.subprocess.run", side_effect=fake_run
+    ):
+        main(
+            str(aa),
+            hits,
+            summary,
+            db=str(db_file),
+            evalue=1e-5,
+            max_target_seqs=10,
+            min_query_coverage=0.35,
+            min_bitscore=50,
+        )
+
+    df = pd.read_csv(summary, sep="\t")
+    assert df.iloc[0]["domain_support"] == False  # noqa: E712
+
+
 # ---------------------------------------------------------------------------
 # load_domain_map
 # ---------------------------------------------------------------------------

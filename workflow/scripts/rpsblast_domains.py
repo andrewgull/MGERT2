@@ -151,7 +151,8 @@ def main(
 
     hits = pd.read_csv(raw_out, sep="\t", names=RPS_COLS)
     hits["qcov"] = hits.apply(
-        lambda r: float(r["length"]) / max(qlen.get(r["qseqid"], 1), 1), axis=1
+        lambda r: float(r["qend"] - r["qstart"] + 1) / max(qlen.get(r["qseqid"], 1), 1),
+        axis=1,
     )
     hits = hits[
         (hits["evalue"] <= float(evalue))
