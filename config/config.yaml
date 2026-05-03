@@ -60,6 +60,6 @@ orf_analysis:
     putative_min_intrinsic: 0.50
 
 phylogeny:
-  model: "MFP"       # MFP = ModelFinder Plus (automatic selection); or e.g. "LG+G4"
-  bootstrap: 1000    # ultrafast bootstrap replicates (minimum 1000 for publication)
-  seed: 12345        # fixed seed for reproducibility
+  model: "JTT"   # General matrix (Jones et al., 1992); MFP = ModelFinder Plus (automatic selection);
+  bootstrap: 1000  # ultrafast bootstrap replicates (minimum 1000 for publication)
+  seed: 12345     # fixed seed for reproducibility

@@ -111,7 +111,13 @@ def main(
         write_empty_outputs(aa_fasta, hits_out, summary_out)
         return
 
-    db_candidates = list(Path().glob(f"{db}*")) if not Path(db).exists() else [Path(db)]
+    db_path = Path(db)
+    if db_path.exists():
+        db_candidates = [db_path]
+    elif db_path.is_absolute():
+        db_candidates = list(db_path.parent.glob(f"{db_path.name}*"))
+    else:
+        db_candidates = list(Path().glob(f"{db}*"))
     if not db_candidates:
         logger.warning(
             "Configured rpsblast database '%s' not found; writing empty domain outputs",
@@ -151,7 +157,8 @@ def main(
 
     hits = pd.read_csv(raw_out, sep="\t", names=RPS_COLS)
     hits["qcov"] = hits.apply(
-        lambda r: float(r["length"]) / max(qlen.get(r["qseqid"], 1), 1), axis=1
+        lambda r: float(r["qend"] - r["qstart"] + 1) / max(qlen.get(r["qseqid"], 1), 1),
+        axis=1,
     )
     hits = hits[
         (hits["evalue"] <= float(evalue))

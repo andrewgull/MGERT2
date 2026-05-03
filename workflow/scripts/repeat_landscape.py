@@ -1,9 +1,10 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import gzip
-import os
 import logging
+import os
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 from utils import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,14 @@ def parse_repeatmasker_out(filepath: str, genome_size: int) -> pd.DataFrame:
         return None
 
     # Read with flexible space delimiter, handle multi-space issues
-    df = pd.read_csv(filepath, skiprows=3, sep=r"\s+", names=cols, engine="python", on_bad_lines=on_bad_line)
+    df = pd.read_csv(
+        filepath,
+        skiprows=3,
+        sep=r"\s+",
+        names=cols,
+        engine="python",
+        on_bad_lines=on_bad_line,
+    )
 
     # Calculate length of each hit
     df["length"] = df["q_end"] - df["q_start"] + 1
@@ -100,8 +108,7 @@ def plot_landscape(data: pd.DataFrame, output_img: str) -> None:
     Generates and saves a Repeat Landscape plot.
 
     Filters for the top 5 most abundant repeat classes and creates a
-    stacked-like bar plot (though using sns.barplot with dodge=False)
-    showing genome percentage vs. divergence.
+    grouped bar plot showing genome percentage vs. divergence.
 
     Args:
         data: DataFrame containing 'div_bin', 'class_family', and 'genome_perc'.
@@ -114,7 +121,9 @@ def plot_landscape(data: pd.DataFrame, output_img: str) -> None:
     major_classes = data.groupby("class_family")["genome_perc"].sum().nlargest(5).index
     plot_data = data[data["class_family"].isin(major_classes)]
 
-    sns.barplot(data=plot_data, x="div_bin", y="genome_perc", hue="class_family", dodge=False)
+    sns.barplot(
+        data=plot_data, x="div_bin", y="genome_perc", hue="class_family", dodge=True
+    )
 
     plt.title("Genomic Repeat Landscape", fontsize=16)
     plt.xlabel("Divergence (Kimura distance %)", fontsize=12)
@@ -126,7 +135,9 @@ def plot_landscape(data: pd.DataFrame, output_img: str) -> None:
     logger.info(f"Plot saved to {output_img}")
 
 
-def main(genome: str, repeatmasker_dir: str, landscape: str, log_file: str = None) -> None:
+def main(
+    genome: str, repeatmasker_dir: str, landscape: str, log_file: str = None
+) -> None:
     """
     Main execution function to generate a repeat landscape.
 
@@ -143,7 +154,9 @@ def main(genome: str, repeatmasker_dir: str, landscape: str, log_file: str = Non
         raise FileNotFoundError(f"No .out file found in {repeatmasker_dir}")
     if len(out_files) > 1:
         # Optionally pick one or warn, here we pick the first one
-        logger.warning(f"Multiple .out files found in {repeatmasker_dir}. Using {out_files[0]}")
+        logger.warning(
+            f"Multiple .out files found in {repeatmasker_dir}. Using {out_files[0]}"
+        )
 
     out_dataframe = os.path.join(repeatmasker_dir, out_files[0])
 
@@ -165,7 +178,9 @@ if __name__ == "__main__":
 
         parser = argparse.ArgumentParser(description="Generate repeat landscape plot")
         parser.add_argument("--genome", required=True, help="Path to genome FASTA")
-        parser.add_argument("--repeatmasker-dir", required=True, help="RepeatMasker output directory")
+        parser.add_argument(
+            "--repeatmasker-dir", required=True, help="RepeatMasker output directory"
+        )
         parser.add_argument("--output", required=True, help="Output plot path")
         parser.add_argument("--log-file", help="Path to the log file")
         args = parser.parse_args()
