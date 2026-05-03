@@ -1,9 +1,10 @@
-import subprocess
+import glob
+import logging
 import os
 import shutil
-import glob
+import subprocess
 import sys
-import logging
+
 from utils import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -12,19 +13,30 @@ logger = logging.getLogger(__name__)
 def run_repeatmodeler_logic(database, threads, output_file, log_file: str):
     setup_logging(log_file, __name__)
 
+    # Run in the database's parent directory so each sample gets its own RM_*
+    # scratch directory and parallel jobs cannot pick up each other's output.
+    work_dir = os.path.dirname(os.path.abspath(database))
+    abs_database = os.path.abspath(database)
+
     command = [
         "RepeatModeler",
         "-threads",
         str(threads),
         "-database",
-        database,
+        abs_database,
     ]
 
     logger.info(f"Running command: {' '.join(command)}")
 
     # Open in append mode because setup_logging might have already opened it
     with open(log_file, "a") as log:
-        process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, universal_newlines=True)
+        process = subprocess.Popen(
+            command,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            cwd=work_dir,
+        )
         process.wait()
 
     if process.returncode != 0:
@@ -32,8 +44,8 @@ def run_repeatmodeler_logic(database, threads, output_file, log_file: str):
         # Note: In a snakemake script, exiting with non-zero will fail the job.
         sys.exit(process.returncode)
 
-    # Find the output directory (RM_...)
-    rm_dirs = glob.glob("RM_*")
+    # Find the output directory (RM_...) scoped to the per-sample work directory
+    rm_dirs = glob.glob(os.path.join(work_dir, "RM_*"))
     if not rm_dirs:
         logger.error("No RM_ directory found after RepeatModeler run.")
         sys.exit(1)
@@ -70,9 +82,15 @@ if __name__ == "__main__":
         import argparse
 
         parser = argparse.ArgumentParser(description="Run RepeatModeler")
-        parser.add_argument("--database", required=True, help="Path to the database file")
-        parser.add_argument("--threads", type=int, default=1, help="Number of threads to use")
-        parser.add_argument("--output-file", required=True, help="Path to the output file")
+        parser.add_argument(
+            "--database", required=True, help="Path to the database file"
+        )
+        parser.add_argument(
+            "--threads", type=int, default=1, help="Number of threads to use"
+        )
+        parser.add_argument(
+            "--output-file", required=True, help="Path to the output file"
+        )
         parser.add_argument("--log-file", required=True, help="Path to the log file")
         args = parser.parse_args()
         run_repeatmodeler_logic(

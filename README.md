@@ -10,7 +10,8 @@
 ## Introduction
 
 This is a rework of [MGERT](https://github.com/andrewgull/MGERT) —
-a big-ass 6-year-old Python script slain by dependency hell.
+an overly long and outdated Python script slain by dependency hell
+(and the author's lack skill).
 
 ---
 
@@ -36,20 +37,25 @@ MGERT2 takes one or more genome assemblies and a target TE family name, then:
 
 ### Installation
 
-Install [Pixi](https://pixi.prefix.dev/latest/installation/), then
-clone the repository and run:
+Install [Pixi](https://pixi.prefix.dev/latest/installation/) on your computer, then
+clone the repository, `cd` into it and run:
 
 ```bash
 pixi install
 ```
 
 This creates a fully reproducible environment with all tools and packages.
+To use the container-based workflow (`pixi run full-container`),
+[Apptainer](https://apptainer.org/docs/admin/latest/installation.html)
+must be installed separately —
+it is not managed by Pixi and is typically available
+as a system-level tool on HPC clusters.
 
 ### Input files
 
 | Path | Description |
 | --- | --- |
-| Any genome assembly path | Gzip-compressed FASTA (`.fasta.gz`, `.fa.gz`) |
+| Any genome assembly path | FASTA with compression (`.gz`, `.bz2`, `.xz`) and extension (`.fasta`, `.fa`, `.fna`, `.ffn`, `.fas`) |
 | `data/pfam/*.smp` | PSSM files compiled into the RPS-BLAST domain database |
 | `data/domains.csv` | TSV mapping each `.smp` filename to a domain type label |
 
@@ -63,7 +69,7 @@ cd00304.smp     EN
 Genome files can live anywhere — their paths are listed directly in
 `config.yaml`. Sample names are derived automatically from the filename
 by stripping compression and FASTA suffixes:
-`/data/E.coli.fasta.gz` → sample name `E.coli`.
+`/data/X.laevis.fasta.gz` → sample name `X.laevis`.
 
 ### Configuration
 
@@ -177,10 +183,24 @@ MAFFT, and passed to IQ-TREE2. One tree is produced per `te_name`.
 
 ```bash
 # Validate configuration without running any jobs
-pixi run dry-run
+pixi run dry-conda
 
-# Run the full pipeline
-pixi run full-run
+# Run full analysis using conda envs
+pixi run full-conda
+
+# or using containers
+pixi run full-container
+```
+
+Container images are cached under `$HOME/snakemake-apptainer`
+(set via `--apptainer-prefix`).
+If your genome files live outside the default Apptainer bind paths
+(e.g. `/scratch` or a network mount),
+export `APPTAINER_BIND` before running:
+
+```bash
+export APPTAINER_BIND="/scratch,/data"
+pixi run full-container
 ```
 
 ### Outputs

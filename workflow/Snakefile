@@ -96,6 +96,13 @@ for _p in config["genomes"]:
         )
     _SAMPLE_TO_GENOME[_name] = _p
 
+# Container image paths — update the tag or registry prefix here to affect all rules at once.
+_C_TETOOLS = "docker://dfam/tetools:1.97"
+_C_BEDTOOLS = "docker://quay.io/biocontainers/bedtools:2.31.0--hf5e1c6e_3"
+_C_MAFFT = "docker://quay.io/biocontainers/mafft:7.520--h031d066_3"
+_C_IQTREE = "docker://quay.io/biocontainers/iqtree:2.2.6--h21ec9f0_0"
+_C_PYTHON = "docker://ghcr.io/andrewgull/mgert2-python:1.0.0"
+
 
 rule all:
     input:
@@ -128,6 +135,8 @@ rule build_database:
         "results/logs/{sample}_build_database.log",
     conda:
         "envs/repeatmodeler.yaml"
+    container:
+        _C_TETOOLS
     params:
         basename=lambda wildcards: f"results/rmod_database/{wildcards.sample}/{wildcards.sample}_rmod",
     shell:
@@ -147,10 +156,22 @@ rule repeatmodeler:
     threads: 8
     conda:
         "envs/repeatmodeler.yaml"
+    container:
+        _C_TETOOLS
     params:
         db_basename=lambda wildcards, input: input.nhr.replace(".nhr", ""),
-    script:
-        "scripts/run_repeatmodeler.py"
+    shell:
+        """
+        WORK_DIR=$(dirname $(realpath {params.db_basename}))
+        ABS_DB=$(realpath {params.db_basename})
+        (cd "$WORK_DIR" && RepeatModeler -threads {threads} -database "$ABS_DB") >> {log} 2>&1
+        NEWEST_RM=$(ls -td "$WORK_DIR"/RM_*/ 2>/dev/null | head -1)
+        if [ -z "$NEWEST_RM" ]; then echo "ERROR: no RM_ directory found" >> {log}; exit 1; fi
+        if [ ! -f "$NEWEST_RM/consensi.fa.classified" ]; then echo "ERROR: consensi.fa.classified missing" >> {log}; exit 1; fi
+        mkdir -p $(dirname {output.families})
+        cp "$NEWEST_RM/consensi.fa.classified" {output.families}
+        rm -rf "$NEWEST_RM"
+        """
 
 
 rule collect_te:
@@ -164,6 +185,8 @@ rule collect_te:
         te_name=lambda wildcards: wildcards.te_name,
     conda:
         "envs/biopython.yaml"
+    container:
+        _C_PYTHON
     script:
         "scripts/collect_te.py"
 
@@ -182,6 +205,8 @@ rule repeatmasker:
     threads: 8
     conda:
         "envs/repeatmasker.yaml"
+    container:
+        _C_TETOOLS
     shell:
         """
         RepeatMasker \
@@ -205,6 +230,8 @@ rule plot_repeat_landscape:
         "results/logs/{sample}_{te_name}_plot_repeat_landscape.log",
     conda:
         "envs/matplotlib.yaml"
+    container:
+        _C_PYTHON
     script:
         "scripts/repeat_landscape.py"
 
@@ -220,6 +247,8 @@ rule make_te_bed:
         te_name=lambda wildcards: wildcards.te_name,
     conda:
         "envs/pandas.yaml"
+    container:
+        _C_PYTHON
     script:
         "scripts/make_te_bed.py"
 
@@ -243,6 +272,8 @@ rule extract_te_fasta:
         "results/logs/{sample}_{te_name}_extract_te_fasta.log",
     conda:
         "envs/bedtools.yaml"
+    container:
+        _C_BEDTOOLS
     shell:
         "bedtools getfasta -fi {input.genome} -bed {input.bed} -fo {output.fasta} -s > {log} 2>&1"
 
@@ -261,6 +292,8 @@ rule call_orfs:
         require_start_codon=config.get("orf_analysis", {}).get("require_start_codon", True),
     conda:
         "envs/orf.yaml"
+    container:
+        _C_PYTHON
     script:
         "scripts/call_orfs.py"
 
@@ -282,6 +315,8 @@ rule filter_orfs:
         require_stop_codon=config.get("orf_analysis", {}).get("require_stop_codon", True),
     conda:
         "envs/orf.yaml"
+    container:
+        _C_PYTHON
     script:
         "scripts/filter_orfs.py"
 
@@ -299,6 +334,8 @@ rule coding_potential_intrinsic:
         medium_threshold=config.get("orf_analysis", {}).get("intrinsic", {}).get("medium_threshold", 0.45),
     conda:
         "envs/orf.yaml"
+    container:
+        _C_PYTHON
     script:
         "scripts/coding_potential_intrinsic.py"
 
@@ -320,6 +357,8 @@ rule build_rps_database:
         pssm_dir=_PSSM_DIR,
     conda:
         "envs/rpsblast.yaml"
+    container:
+        _C_PYTHON
     shell:
         """
         mkdir -p results/rpsdb
@@ -347,6 +386,8 @@ rule rpsblast_domains:
         domains_csv=config.get("orf_analysis", {}).get("rpsblast", {}).get("domains_csv", "data/domains.csv"),
     conda:
         "envs/rpsblast.yaml"
+    container:
+        _C_PYTHON
     script:
         "scripts/rpsblast_domains.py"
 
@@ -371,6 +412,8 @@ rule classify_orf_confidence:
         te_coverage_scope=config.get("orf_analysis", {}).get("domain_filter", {}).get("te_coverage_scope", "all"),
     conda:
         "envs/orf.yaml"
+    container:
+        _C_PYTHON
     script:
         "scripts/classify_orf_confidence.py"
 
@@ -386,6 +429,8 @@ rule orf_report:
         "results/logs/{sample}_{te_name}_orf_report.log",
     conda:
         "envs/pandas.yaml"
+    container:
+        _C_PYTHON
     script:
         "scripts/orf_report.py"
 
@@ -422,6 +467,8 @@ rule align_orfs:
     threads: 4
     conda:
         "envs/phylogeny.yaml"
+    container:
+        _C_MAFFT
     shell:
         "mafft --auto --thread {threads} {input.pooled} > {output.alignment} 2> {log}"
 
@@ -455,6 +502,8 @@ rule build_phylogeny:
         seed=config.get("phylogeny", {}).get("seed", 12345),
     conda:
         "envs/phylogeny.yaml"
+    container:
+        _C_IQTREE
     shell:
         """
         iqtree2 \

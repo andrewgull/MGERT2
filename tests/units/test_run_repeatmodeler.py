@@ -18,10 +18,15 @@ from workflow.scripts.run_repeatmodeler import run_repeatmodeler_logic
 
 def test_run_repeatmodeler_logic_success():
     """Test successful execution of RepeatModeler logic."""
-    database = "test_db"
+    database = "data/sample1/sample1_rmod"
     threads = 4
     output_file = "output/families.fa"
     log_file = "logs/repeatmodeler.log"
+
+    work_dir = os.path.dirname(os.path.abspath(database))
+    abs_database = os.path.abspath(database)
+    rm_dir1 = os.path.join(work_dir, "RM_1")
+    rm_dir2 = os.path.join(work_dir, "RM_2")
 
     with patch(
         "workflow.scripts.run_repeatmodeler.subprocess.Popen"
@@ -47,10 +52,9 @@ def test_run_repeatmodeler_logic_success():
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
 
-        # Mock glob and directory finding
-        mock_glob.return_value = ["RM_1", "RM_2"]
-        # RM_2 is newer
-        mock_getmtime.side_effect = lambda x: 100 if x == "RM_1" else 200
+        # Mock glob and directory finding; RM_2 is newer
+        mock_glob.return_value = [rm_dir1, rm_dir2]
+        mock_getmtime.side_effect = lambda x: 100 if x == rm_dir1 else 200
         mock_exists.return_value = True
 
         run_repeatmodeler_logic(database, threads, output_file, log_file)
@@ -62,12 +66,15 @@ def test_run_repeatmodeler_logic_success():
         assert "-threads" in command
         assert "4" in command
         assert "-database" in command
-        assert "test_db" in command
+        assert abs_database in command
+        assert mock_popen.call_args[1].get("cwd") == work_dir
 
         mock_process.wait.assert_called_once()
-        mock_glob.assert_called_with("RM_*")
-        mock_copy.assert_called_once_with("RM_2/consensi.fa.classified", output_file)
-        mock_rmtree.assert_called_once_with("RM_2")
+        mock_glob.assert_called_with(os.path.join(work_dir, "RM_*"))
+        mock_copy.assert_called_once_with(
+            os.path.join(rm_dir2, "consensi.fa.classified"), output_file
+        )
+        mock_rmtree.assert_called_once_with(rm_dir2)
 
 
 def test_run_repeatmodeler_logic_failure():
