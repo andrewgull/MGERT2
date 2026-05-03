@@ -10,7 +10,8 @@
 ## Introduction
 
 This is a rework of [MGERT](https://github.com/andrewgull/MGERT) —
-an overly long and outdated Python script slain by dependency hell (and the author's lack skill).
+an overly long and outdated Python script slain by dependency hell
+(and the author's lack skill).
 
 ---
 
@@ -44,8 +45,11 @@ pixi install
 ```
 
 This creates a fully reproducible environment with all tools and packages.
-To use the container-based workflow (`pixi run full-container`), [Apptainer](https://apptainer.org/docs/admin/latest/installation.html)
-must be installed separately — it is not managed by Pixi and is typically available as a system-level tool on HPC clusters.
+To use the container-based workflow (`pixi run full-container`),
+[Apptainer](https://apptainer.org/docs/admin/latest/installation.html)
+must be installed separately —
+it is not managed by Pixi and is typically available
+as a system-level tool on HPC clusters.
 
 ### Input files
 
@@ -188,8 +192,10 @@ pixi run full-conda
 pixi run full-container
 ```
 
-Container images are cached under `$HOME/snakemake-apptainer` (set via `--apptainer-prefix`).
-If your genome files live outside the default Apptainer bind paths (e.g. `/scratch` or a network mount),
+Container images are cached under `$HOME/snakemake-apptainer`
+(set via `--apptainer-prefix`).
+If your genome files live outside the default Apptainer bind paths
+(e.g. `/scratch` or a network mount),
 export `APPTAINER_BIND` before running:
 
 ```bash
