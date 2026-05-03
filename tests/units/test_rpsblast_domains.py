@@ -104,12 +104,32 @@ def test_main_db_not_found_writes_empty_outputs(tmp_path):
     _write_aa_fasta(aa, ["te1|orf_1"])
     hits = str(tmp_path / "hits.tsv")
     summary = str(tmp_path / "summary.tsv")
-    # use a relative name so Path().glob() doesn't choke on absolute patterns (Python 3.13+)
     main(
         str(aa),
         hits,
         summary,
-        db="nonexistent_db_xyz",
+        db=str(tmp_path / "nonexistent_db"),
+        evalue=1e-5,
+        max_target_seqs=10,
+        min_query_coverage=0.35,
+        min_bitscore=50,
+    )
+
+    df = pd.read_csv(summary, sep="\t")
+    assert len(df) == 1
+    assert df.iloc[0]["domain_support"] == False  # noqa: E712
+
+
+def test_main_db_not_found_relative_path_writes_empty_outputs(tmp_path):
+    aa = tmp_path / "aa.fa"
+    _write_aa_fasta(aa, ["te1|orf_1"])
+    hits = str(tmp_path / "hits.tsv")
+    summary = str(tmp_path / "summary.tsv")
+    main(
+        str(aa),
+        hits,
+        summary,
+        db="nonexistent_relative_db_xyz",
         evalue=1e-5,
         max_target_seqs=10,
         min_query_coverage=0.35,

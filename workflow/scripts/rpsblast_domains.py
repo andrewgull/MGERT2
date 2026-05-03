@@ -111,7 +111,13 @@ def main(
         write_empty_outputs(aa_fasta, hits_out, summary_out)
         return
 
-    db_candidates = list(Path().glob(f"{db}*")) if not Path(db).exists() else [Path(db)]
+    db_path = Path(db)
+    if db_path.exists():
+        db_candidates = [db_path]
+    elif db_path.is_absolute():
+        db_candidates = list(db_path.parent.glob(f"{db_path.name}*"))
+    else:
+        db_candidates = list(Path().glob(f"{db}*"))
     if not db_candidates:
         logger.warning(
             "Configured rpsblast database '%s' not found; writing empty domain outputs",
