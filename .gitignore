@@ -21,6 +21,7 @@ RM_*/
 
 # snakemake files
 .snakemake/
+.snakemake_cache/
 results/
 
 # data
